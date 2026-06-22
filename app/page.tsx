@@ -21,7 +21,7 @@ export default function Home() {
         const data = await res.json();
         setNewsList(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error("Failed fetching news layout matrix:", error);
+        console.error("Portal fetch error:", error);
       } finally {
         setLoading(false);
       }
@@ -29,149 +29,160 @@ export default function Home() {
     fetchNews();
   }, [activeCategory, API_URL]);
 
-  const tazaKhabar = newsList.slice(0, 6);
+  // Utility function to clean markdown junk or brackets from automation text source
+  const cleanText = (text: string) => {
+    if (!text) return "";
+    return text.replace(/\*\*|\[|\]/g, "").trim();
+  };
+
+  const breakingNews = newsList.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#f4f5f6] text-zinc-900 antialiased font-sans">
+    <div className="min-h-screen bg-[#f3f4f6] text-zinc-900 antialiased selection:bg-red-500 selection:text-white">
       
-      {/* 🔴 TOP BREAKING TICKER BAR */}
-      <div className="bg-[#cc0000] text-white text-center py-2 text-[11px] font-bold tracking-widest uppercase shadow-sm">
-        ⚡ LIVE REAL-TIME HINGLISH NEWS AUTOMATION ENGINE
+      {/* Ticker header */}
+      <div className="bg-zinc-950 text-[#f3f4f6] text-center py-1.5 text-[10px] font-mono font-bold tracking-widest uppercase">
+        ⚡ REAL-TIME AI ENGINE PIPELINE ACTIVE
       </div>
 
-      {/* HEADER LOGO SECTION */}
-      <header className="bg-white border-b border-zinc-200 sticky top-0 z-50 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col items-center justify-between gap-3 md:flex-row">
-          <div className="text-center md:text-left">
-            <h1 className="text-4xl font-black tracking-tight text-[#cc0000] font-serif">
+      {/* Modern Clean Branding Bar */}
+      <header className="bg-white border-b border-zinc-200 sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 pt-4 pb-3 flex flex-col items-center justify-between gap-1 sm:flex-row">
+          <div className="text-center sm:text-left">
+            <h1 className="text-3xl font-black tracking-tight text-[#cc0000] uppercase font-serif">
               तेज़ ख़बर
             </h1>
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest mt-1">
-              PRO DIGITAL PORTAL v5.0
+            <p className="text-[9px] text-zinc-400 font-mono tracking-widest uppercase font-bold">
+              Premium Automation News Aggregator
             </p>
           </div>
-          <div className="text-xs text-zinc-500 font-bold font-mono bg-zinc-100 px-3 py-1.5 rounded-md">
-            {new Date().toLocaleDateString('hi-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div className="text-[11px] font-mono font-bold text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded">
+            {new Date().toLocaleDateString('hi-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
           </div>
         </div>
 
-        {/* 🎛️ PREMIUM STICKY NAVIGATION BAR */}
-        <div className="bg-[#1a1a1a] text-white shadow-inner">
-          <div className="max-w-7xl mx-auto px-2 flex gap-1 overflow-x-auto scrollbar-none">
+        {/* Categories Scroller */}
+        <div className="bg-white border-t border-zinc-100">
+          <div className="max-w-4xl mx-auto px-2 flex gap-1 overflow-x-auto scrollbar-none">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-5 py-3.5 text-xs font-extrabold uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-4 ${
+                className={`px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-2 ${
                   activeCategory === cat
-                    ? "bg-[#cc0000] border-white text-white shadow-md"
-                    : "border-transparent text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                    ? "border-[#cc0000] text-[#cc0000] bg-red-50/40"
+                    : "border-transparent text-zinc-500 hover:text-zinc-900"
                 }`}
               >
-                {cat === "All" ? "मुख्य समाचार" : cat}
+                {cat === "All" ? "Main Feed" : cat}
               </button>
             ))}
           </div>
         </div>
       </header>
 
-      {/* 📰 MAIN PORTAL CORE */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      {/* Main Container */}
+      <main className="max-w-4xl mx-auto px-4 py-6">
         
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 gap-3">
-            <div className="w-8 h-8 border-4 border-zinc-200 border-t-[#cc0000] rounded-full animate-spin"></div>
-            <p className="text-zinc-500 font-mono text-xs tracking-wider">Syncing Portal Engine...</p>
+            <div className="w-6 h-6 border-2 border-zinc-300 border-t-[#cc0000] rounded-full animate-spin"></div>
+            <p className="text-zinc-400 font-mono text-[10px] tracking-widest">RENDERING FEED MATRIX...</p>
           </div>
         ) : newsList.length === 0 ? (
-          <div className="text-center py-20 text-zinc-500 font-semibold bg-white border border-zinc-200 rounded-xl shadow-xs">
-            📭 Is category me abhi koi khabar nahi mili bhai!
+          <div className="text-center py-20 text-zinc-400 font-mono text-xs bg-white border border-zinc-200 rounded-xl shadow-xs">
+            📭 Empty feed stack. Scraper loop inactive for this channel.
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* 🔴 SIDEBAR: TAZA KHABAR (CLEAN BULLET LIST WITH NO UNDERLINES) */}
-            <aside className="lg:col-span-1 bg-white border border-zinc-200 p-5 rounded-xl shadow-xs h-fit">
-              <h2 className="text-sm font-extrabold text-white bg-[#cc0000] px-4 py-2 rounded-lg uppercase tracking-wider mb-4 flex items-center gap-2 font-serif shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-white inline-block animate-pulse"></span>
-                अभी-अभी की खबरें
-              </h2>
-              <div className="divide-y divide-zinc-100">
-                {tazaKhabar.map((news, i) => (
-                  <div key={i} className="py-3.5 first:pt-0 last:pb-0 group">
-                    <span className="text-[9px] font-black text-red-600 uppercase tracking-widest block mb-1">
-                      {news.category || "BREAKING"}
-                    </span>
-                    <a
-                      href={news.source_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-zinc-800 hover:text-[#cc0000] transition-colors line-clamp-3 leading-relaxed no-underline block"
-                    >
-                      {news.title.replace(/\*\*|\[|\]/g, "")}
-                    </a>
-                  </div>
-                ))}
+            {/* Left Briefing list for quick views */}
+            <div className="md:col-span-1 space-y-4">
+              <div className="bg-white border border-zinc-200 p-4 rounded-xl shadow-xs">
+                <h3 className="text-xs font-black text-white bg-zinc-900 px-3 py-1.5 rounded-md uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block animate-ping"></span>
+                  Quick Stream
+                </h3>
+                <div className="divide-y divide-zinc-100 font-sans">
+                  {breakingNews.map((news, i) => (
+                    <div key={i} className="py-2.5 first:pt-0 last:pb-0">
+                      <a
+                        href={news.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-zinc-700 hover:text-[#cc0000] transition-colors line-clamp-2 leading-snug no-underline block"
+                      >
+                        ⚡ {cleanText(news.title)}
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </aside>
+            </div>
 
-            {/* ⚡ MAIN CONTENT GRID ROW */}
-            <section className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Premium Center Feed (Streamline Design) */}
+            <div className="md:col-span-2 space-y-6">
               {newsList.map((news, index) => (
                 <article 
                   key={index} 
-                  className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between"
+                  className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-xs hover:shadow-sm transition-all duration-200 flex flex-col"
                 >
-                  <div>
-                    {/* Image Area */}
-                    <div className="relative h-52 w-full bg-zinc-100 overflow-hidden border-b border-zinc-100">
-                      {news.image_url ? (
-                        <img
-                          src={news.image_url}
-                          alt={news.title || "News Media"}
-                          className="object-cover w-full h-full hover:scale-102 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-zinc-50 text-zinc-400 text-xs font-mono">
-                          [ Image Feed Loading ]
-                        </div>
-                      )}
-                      <span className="absolute top-3 left-3 bg-[#cc0000] text-white font-extrabold text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-md shadow-xs">
-                        {news.badge ? news.badge.replace(/[\[\]]/g, "") : "LIVE"}
-                      </span>
+                  {/* Dynamic Scaled Image Layout */}
+                  {news.image_url && (
+                    <div className="relative h-56 sm:h-64 w-full bg-zinc-50 overflow-hidden border-b border-zinc-100">
+                      <img
+                        src={news.image_url}
+                        alt="News Banner Feed"
+                        className="object-cover w-full h-full opacity-95"
+                      />
+                      <div className="absolute top-3 left-3 flex gap-1.5 items-center">
+                        <span className="bg-red-600 text-white font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded shadow-xs">
+                          {news.badge ? cleanText(news.badge) : "LIVE"}
+                        </span>
+                        <span className="bg-zinc-900/80 backdrop-blur text-white font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded">
+                          {cleanText(news.category || "Feed")}
+                        </span>
+                      </div>
                     </div>
+                  )}
 
-                    {/* Post Content Area */}
-                    <div className="p-5">
-                      <span className="text-[10px] font-black text-red-600 uppercase tracking-wider font-mono">
-                        {news.category || "General"}
-                      </span>
-                      <h3 className="text-base font-black text-zinc-900 mt-1.5 leading-snug hover:text-[#cc0000] transition-colors">
-                        {news.title.replace(/\*\*|\[|\]/g, "")}
-                      </h3>
-                      <p className="mt-2.5 text-zinc-600 text-xs font-normal leading-relaxed line-clamp-4">
-                        {news.content}
+                  {/* Text Grid Body Context */}
+                  <div className="p-5 flex-grow flex flex-col justify-between">
+                    <div>
+                      {!news.image_url && (
+                        <span className="text-[9px] font-black text-red-600 uppercase tracking-widest font-mono">
+                          {cleanText(news.category || "General")}
+                        </span>
+                      )}
+                      <h2 className="text-lg font-extrabold text-zinc-950 leading-snug tracking-tight hover:text-[#cc0000] transition-colors">
+                        {cleanText(news.title)}
+                      </h2>
+                      <p className="mt-2.5 text-zinc-600 text-xs font-normal leading-relaxed tracking-wide">
+                        {cleanText(news.content)}
                       </p>
                     </div>
-                  </div>
 
-                  {/* Clean Footer Info */}
-                  <div className="mx-5 py-4 border-t border-zinc-100 flex justify-between items-center text-[10px] font-mono text-zinc-400">
-                    <span className="font-medium">
-                      🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}
-                    </span>
-                    <a
-                      href={news.source_url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-red-600 hover:text-red-700 transition-colors no-underline uppercase tracking-wider text-[10px]"
-                    >
-                      पूरा पढ़ें →
-                    </a>
+                    {/* Metadata Footer Action items */}
+                    <div className="mt-5 pt-3 border-t border-zinc-100 flex justify-between items-center text-[10px] font-mono text-zinc-400">
+                      <div className="flex items-center gap-1">
+                        <span>⏱️</span>
+                        <span>
+                          {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}
+                        </span>
+                      </div>
+                      <a
+                        href={news.source_url || "#"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-[#cc0000] hover:text-red-700 tracking-wider uppercase text-[10px] no-underline"
+                      >
+                        Read Full Article →
+                      </a>
+                    </div>
                   </div>
                 </article>
               ))}
-            </section>
+            </div>
 
           </div>
         )}

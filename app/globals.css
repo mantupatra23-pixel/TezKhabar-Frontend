@@ -3,17 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8f9fa;
-  --foreground: #111111;
+  --background: #f9fafb;
+  --foreground: #111827;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Custom scrollbar for categories */
+/* Remove default blue/purple links line lines entirely */
+a {
+  text-decoration: none !important;
+}
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }

@@ -9,15 +9,6 @@ export default function Home() {
   const categories = ["All", "Politics", "Bollywood", "Tech", "Sports", "Crypto"];
   const API_URL = "https://tezkhabar.onrender.com";
 
-  // Array of diverse premium news abstract fallback images to avoid repetition
-  const fallbacks = [
-    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1495020689067-958852a6565d?q=80&w=800&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=800&auto=format&fit=crop"
-  ];
-
   useEffect(() => {
     document.title = activeCategory === "All" 
       ? "तेज़ ख़बर | निष्पक्ष खबर, सबसे तेज़" 
@@ -53,11 +44,9 @@ export default function Home() {
       .trim();
   };
 
-  const getSecureImageUrl = (url: string, index: number) => {
-    if (!url || url.includes("googleusercontent.com") || url.includes("logo") || url.includes("default") || url.length < 10) {
-      // Dynamic fallback based on array position index to stop repetition
-      return fallbacks[index % fallbacks.length]; 
-    }
+  // Direct secure translation of image URLs to allow the absolute real image stream
+  const getRealImageUrl = (url: string) => {
+    if (!url || url.length < 10) return null;
     if (url.startsWith("http://")) {
       return url.replace("http://", "https://");
     }
@@ -86,7 +75,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* DYNAMIC CATEGORIES NAVIGATION */}
+          {/* DYNAMIC NAVIGATION LINKS */}
           <div className="bg-white border-t border-neutral-100">
             <div className="max-w-2xl mx-auto px-2 flex gap-1 overflow-x-auto scrollbar-none">
               {categories.map((cat) => (
@@ -106,12 +95,12 @@ export default function Home() {
           </div>
         </header>
 
-        {/* MAIN BODY LAYOUT */}
+        {/* MAIN BODY CONTAINER */}
         <main className="max-w-xl mx-auto px-4 py-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-36 gap-2">
               <div className="w-5 h-5 border-2 border-neutral-300 border-t-[#cc0000] rounded-full animate-spin"></div>
-              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Syncing Dashboard...</p>
+              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Syncing Live Stream...</p>
             </div>
           ) : newsList.length === 0 ? (
             <div className="text-center py-20 text-neutral-400 font-mono text-xs bg-white border border-neutral-200 rounded-xl">
@@ -120,7 +109,7 @@ export default function Home() {
           ) : (
             <div className="space-y-8">
               
-              {/* QUICK BRIEFING INTERFACE */}
+              {/* QUICK BRIEFING BOARD */}
               <div className="bg-neutral-50 border border-neutral-200/60 p-4 rounded-xl shadow-2xs">
                 <h3 className="text-[10px] font-mono font-black text-neutral-500 uppercase tracking-widest mb-3 pb-1.5 border-b border-neutral-200/60">
                   ⚡ QUICK BRIEFING
@@ -141,14 +130,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* AUTOMATED NEWS ARTICLES STREAM */}
+              {/* AUTOMATED MAIN STREAM ARTICLES */}
               <div className="divide-y divide-neutral-200">
                 {newsList.map((news, index) => {
-                  const verifiedImage = getSecureImageUrl(news.image_url, index);
+                  const targetImage = getRealImageUrl(news.image_url);
                   return (
                     <article key={index} className="py-8 first:pt-0 last:pb-0 flex flex-col">
                       
-                      {/* Meta context rows */}
+                      {/* Meta context fields */}
                       <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider mb-2 select-none">
                         <span className="text-[#cc0000] font-extrabold">{cleanText(news.category || "General")}</span>
                         <span>•</span>
@@ -160,22 +149,31 @@ export default function Home() {
                         {cleanText(news.title)}
                       </h2>
 
-                      {/* Premium Scaled Non-Repeating Image Frame */}
-                      <div className="w-full aspect-video bg-neutral-100 rounded-xl overflow-hidden mb-5 relative flex items-center justify-center shadow-2xs">
-                        <img
-                          src={verifiedImage}
-                          alt="TezKhabar News Document Layout Asset"
-                          className="w-full h-full object-cover opacity-95 hover:opacity-100 transition-opacity duration-200"
-                          loading="lazy"
-                        />
-                      </div>
+                      {/* Pure Real Image Container with Auto-Hide Collapse Fallback */}
+                      {targetImage && (
+                        <div className="w-full aspect-video bg-neutral-100 rounded-xl overflow-hidden mb-5 relative flex items-center justify-center shadow-2xs">
+                          <img
+                            src={targetImage}
+                            alt="TezKhabar News Real Stream Graph"
+                            className="w-full h-full object-cover opacity-95 hover:opacity-100 transition-opacity duration-200"
+                            loading="lazy"
+                            onError={(e) => {
+                              // Safely collapses the image space completely if url link drops dead
+                              const target = e.target as HTMLElement;
+                              if (target && target.parentElement) {
+                                target.parentElement.style.display = 'none';
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
                       
-                      {/* Description Content Copy */}
+                      {/* Content Body Layout */}
                       <p className="text-neutral-700 text-sm sm:text-base font-normal leading-relaxed text-justify tracking-wide whitespace-pre-line px-1">
                         {cleanText(news.content)}
                       </p>
 
-                      {/* Footer Metadata */}
+                      {/* Footer Specs info */}
                       <div className="mt-5 flex justify-between items-center text-[10px] font-mono text-neutral-400 select-none px-1">
                         <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}</span>
                         <a
@@ -198,7 +196,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* FOOTER */}
       <footer className="text-center py-10 text-[10px] text-neutral-400 border-t border-neutral-200 font-mono bg-white mt-16 select-none">
         © 2026 TEZKHABAR AUTOMATION GROUP NETWORKS LTD. ALL RIGHTS RESERVED.
       </footer>

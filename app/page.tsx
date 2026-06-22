@@ -1,45 +1,43 @@
-""use client"";
-import { useEffect, useState } from ""react"";
-import { motion, AnimatePresence } from ""framer-motion"";
+"use client";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const [newsList, setNewsList] = useState<any[]>([]);
-  const [activeCategory, setActiveCategory] = useState(""All"");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("""");
+  const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  const categories = [""All"", ""Politics"", ""Business"", ""Technology"", ""AI"", ""Finance"", ""Sports"", ""Entertainment""];
-  const API_URL = ""https://tezkhabar.onrender.com"";
+  const categories = ["All", "Politics", "Business", "Technology", "AI", "Finance", "Sports", "Entertainment"];
+  const API_URL = "https://tezkhabar.onrender.com";
 
   useEffect(() => {
-    // SEO Document Title Dynamic Sync
-    document.title = activeCategory === ""All"" 
-      ? ""TezKhabar AI | Elite Global News Hub"" 
+    document.title = activeCategory === "All" 
+      ? "TezKhabar AI | Elite Global News Hub" 
       : `${activeCategory} Matrix - TezKhabar`;
 
     async function fetchNews() {
       try {
         setLoading(true);
         let url = `${API_URL}/api/news`;
-        if (activeCategory !== ""All"") {
+        if (activeCategory !== "All") {
           url += `?category=${activeCategory}`;
         }
         const res = await fetch(url);
         const data = await res.json();
         setNewsList(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error(""Portal Core Pipeline Exception:"", error);
+        console.error("Portal Core Pipeline Exception:", error);
       } finally {
         setLoading(false);
       }
     }
     fetchNews();
 
-    // Live Web Sync: Auto refresh every 3 minutes
     const interval = setInterval(fetchNews, 180000);
     return () => clearInterval(interval);
   }, [activeCategory]);
@@ -51,31 +49,30 @@ export default function Home() {
         setScrollProgress((window.scrollY / totalScroll) * 100);
       }
     };
-    window.addEventListener(""scroll"", handleScroll);
-    return () => window.removeEventListener(""scroll"", handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const cleanText = (text: string, maxLength: number = 140) => {
-    if (!text) return """";
-    const cleaned = text.replace(/<\/?[^>]+(>|$)/g, """").replace(/\*\*|\[|\]/g, """").trim();
+    if (!text) return "";
+    const cleaned = text.replace(/<\/?[^>]+(>|$)/g, "").replace(/\*\*|\[|\]/g, "").trim();
     if (cleaned.length <= maxLength) return cleaned;
-    return cleaned.slice(0, maxLength) + ""..."";
+    return cleaned.slice(0, maxLength) + "...";
   };
 
   const getSecureImageUrl = (url: string, id: number) => {
-    if (!url || url.includes(""googleusercontent.com"") || url.includes(""logo"") || url.length < 10) {
+    if (!url || url.includes("googleusercontent.com") || url.includes("logo") || url.length < 10) {
       const curatedStock = [
-        ""https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000"",
-        ""https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000"",
-        ""https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=1000"",
-        ""https://images.unsplash.com/photo-1495020689067-958852a6565d?q=80&w=1000""
+        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000",
+        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000",
+        "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=1000",
+        "https://images.unsplash.com/photo-1495020689067-958852a6565d?q=80&w=1000"
       ];
       return curatedStock[id % curatedStock.length];
     }
-    return url.startsWith(""http://"") ? url.replace(""http://"", ""https://"") : url;
+    return url.startsWith("http://") ? url.replace("http://", "https://") : url;
   };
 
-  // Content Filtering and Segmentation
   const heroArticle = newsList[0];
   const trendingGrid = newsList.slice(1, 4);
   const coreFeed = newsList.slice(4);
@@ -105,14 +102,14 @@ export default function Home() {
                       : "text-slate-400 hover:text-blue-500"
                   }`}
                 >
-                  {cat === ""All"" ? ""Home"" : cat}
+                  {cat === "All" ? "Home" : cat}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Search Trigger */}
+            {/* Search Input */}
             <div className="relative flex items-center">
               <AnimatePresence>
                 {searchOpen && (
@@ -138,7 +135,7 @@ export default function Home() {
               {darkMode ? "☀️" : "🌙"}
             </button>
 
-            {/* Mobile Burger Menu */}
+            {/* Mobile Menu Burger */}
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2 rounded-lg hover:bg-slate-800/20 text-slate-400">
               ☰
             </button>
@@ -146,7 +143,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* 📱 MOBILE NAVIGATION SLIDE DOWN MENU */}
+      {/* 📱 MOBILE NAVIGATION DRAWER */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -170,7 +167,7 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* 🔴 BREAKING NEWS TICKER MODULE */}
+      {/* 🔴 BREAKING NEWS TICKER */}
       {newsList.length > 0 && (
         <div className={`border-b ${darkMode ? "bg-slate-950/60 border-slate-900" : "bg-blue-50 border-slate-200"} py-2.5 px-4 overflow-hidden`}>
           <div className="max-w-7xl mx-auto flex items-center gap-4">
@@ -190,7 +187,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 📰 MAIN GRID ENVIRONMENT CONTAINER */}
+      {/* 📰 MAIN PORTAL LAYOUT CONTAINER */}
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40 gap-4">
@@ -204,10 +201,9 @@ export default function Home() {
         ) : (
           <div className="space-y-12">
 
-            {/* ⚡ HOMEPAGE HEROS: COMBINED HIGH-END BROADCAST VIEW */}
-            {heroArticle && activeCategory === ""All"" && (
+            {/* ⚡ FEATURED HERO HERO SECTION */}
+            {heroArticle && activeCategory === "All" && (
               <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Large Featured Hero Box */}
                 <motion.div 
                   whileHover={{ y: -4 }}
                   className={`lg:col-span-2 group rounded-3xl overflow-hidden border transition-all duration-300 ${darkMode ? "bg-slate-900/40 border-slate-800/80 hover:border-blue-500/30 shadow-xl" : "bg-white border-slate-200/80 shadow-md"}`}
@@ -222,7 +218,7 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                     <div className="absolute bottom-6 left-6 right-6">
                       <span className="bg-blue-600 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg">
-                        {cleanText(heroArticle.category || ""FEATURED"", 15)}
+                        {cleanText(heroArticle.category || "FEATURED", 15)}
                       </span>
                       <h2 className="text-xl sm:text-3xl font-black tracking-tight text-white font-serif mt-3 leading-tight group-hover:text-blue-400 transition-colors">
                         {cleanText(heroArticle.title, 100)}
@@ -243,7 +239,7 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                {/* PREMIUM HORIZONTAL QUICK BRIEFING SIDEBAR */}
+                {/* 📋 INSHORTS STREAM PANEL */}
                 <div className="lg:col-span-1 flex flex-col gap-4">
                   <div className={`p-5 rounded-2xl border ${darkMode ? "bg-slate-950/40 border-slate-900" : "bg-white border-slate-200"} flex items-center justify-between`}>
                     <h3 className="text-xs font-black tracking-widest uppercase text-orange-500 flex items-center gap-2">
@@ -265,7 +261,7 @@ export default function Home() {
                         }`}
                       >
                         <span className="text-[9px] font-mono font-bold uppercase text-blue-500 tracking-wider">
-                          {news.category || ""STREAM""}
+                          {news.category || "STREAM"}
                         </span>
                         <h4 className="text-xs font-bold leading-snug text-slate-300 group-hover:text-white">
                           {cleanText(news.title, 80)}
@@ -277,8 +273,8 @@ export default function Home() {
               </section>
             )}
 
-            {/* 🎴 TRENDING GRID CARDS SYSTEM */}
-            {trendingGrid.length > 0 && activeCategory === ""All"" && (
+            {/* 🎴 TRENDING INTELLIGENCE GRID */}
+            {trendingGrid.length > 0 && activeCategory === "All" && (
               <section className="space-y-6">
                 <h3 className="text-sm font-black tracking-widest uppercase text-blue-500 flex items-center gap-2">
                   <span>⚡</span> Trending Intelligence
@@ -295,7 +291,7 @@ export default function Home() {
                       <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
                         <img src={getSecureImageUrl(news.image_url, index + 1)} alt="news" className="w-full h-full object-cover" loading="lazy" />
                         <span className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white font-mono text-[8px] uppercase tracking-widest px-2 py-0.5 rounded">
-                          {news.category || ""GRID""}
+                          {news.category || "GRID"}
                         </span>
                       </div>
                       <div className="p-5 flex-grow flex flex-col justify-between gap-4">
@@ -303,7 +299,7 @@ export default function Home() {
                           {cleanText(news.title, 75)}
                         </h4>
                         <div className="flex justify-between items-center text-[10px] font-mono text-slate-500">
-                          <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""Recent""}</span>
+                          <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}</span>
                           <a href={news.source_url} target="_blank" className="font-bold text-blue-500 hover:underline">Source →</a>
                         </div>
                       </div>
@@ -313,13 +309,13 @@ export default function Home() {
               </section>
             )}
 
-            {/* ⚡ LATEST STREAM MATRIX */}
+            {/* ⚡ ARTICLE STREAM FEED GRID */}
             <section className="space-y-6">
               <h3 className="text-sm font-black tracking-widest uppercase text-slate-400 flex items-center gap-2">
-                <span>🗂️</span> {activeCategory === ""All"" ? ""Latest Feed Stream"" : `${activeCategory} Feed Grid`}
+                <span>🗂️</span> {activeCategory === "All" ? "Latest Feed Stream" : `${activeCategory} Feed Grid`}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(activeCategory === ""All"" ? coreFeed : newsList).map((news, index) => (
+                {(activeCategory === "All" ? coreFeed : newsList).map((news, index) => (
                   <motion.article
                     whileHover={{ y: -4 }}
                     key={index}
@@ -329,10 +325,10 @@ export default function Home() {
                   >
                     <div className="p-6 flex flex-col gap-3">
                       <div className="flex items-center justify-between text-[9px] font-mono tracking-widest uppercase font-bold text-orange-500">
-                        <span>{news.category || ""GENERAL""}</span>
-                        <span className="text-slate-600">{news.badge ? cleanText(news.badge, 10) : ""LIVE""}</span>
+                        <span>{news.category || "GENERAL"}</span>
+                        <span className="text-slate-600">{news.badge ? cleanText(news.badge, 10) : "LIVE"}</span>
                       </div>
-                      <h4 className="text-base font-black font-serif leading-snug text-slate-100 group-hover:text-blue-500 transition-colors">
+                      <h4 className="text-base font-black font-serif leading-snug group-hover:text-blue-500 transition-colors">
                         {cleanText(news.title, 80)}
                       </h4>
                       <p className="text-xs text-slate-400 leading-relaxed line-clamp-3">
@@ -340,9 +336,9 @@ export default function Home() {
                       </p>
                     </div>
                     <div className="px-6 py-4 border-t border-slate-800/40 bg-slate-950/20 flex justify-between items-center text-[10px] font-mono text-slate-500">
-                      <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""Recent""}</span>
+                      <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}</span>
                       <a
-                        href={news.source_url || ""#""}
+                        href={news.source_url || "#"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-bold text-blue-500 hover:text-blue-400 uppercase tracking-wider text-[9px]"
@@ -375,7 +371,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* 🏁 PREMIUM GLOBAL FOOTER */}
+      {/* 🏁 GLOBAL FOOTER */}
       <footer className={`border-t py-12 px-6 sm:px-12 font-mono text-xs text-slate-500 transition-colors ${darkMode ? "bg-slate-950 border-slate-900" : "bg-white border-slate-200"}`}>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="text-center sm:text-left space-y-1">

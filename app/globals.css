@@ -3,20 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  --background: #f8f9fa;
+  --foreground: #111111;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Custom Neon Glow Effect for Premium UI */
-.neon-border {
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+/* Custom scrollbar for categories */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
-.neon-text-glow {
-  text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

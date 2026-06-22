@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [newsList, setNewsList] = useState([]);
+  // TypeScript strictly allows 'any' array mapping now to bypass 'never[]' type error
+  const [newsList, setNewsList] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +28,7 @@ export default function Home() {
       }
     }
     fetchNews();
-  }, [activeCategory]);
+  }, [activeCategory, API_URL]);
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-green-500 selection:text-black">
@@ -82,7 +83,7 @@ export default function Home() {
                   {news.image_url ? (
                     <img
                       src={news.image_url}
-                      alt={news.title}
+                      alt={news.title || "TezKhabar News"}
                       className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
                     />
                   ) : (
@@ -112,10 +113,10 @@ export default function Home() {
 
                   <div className="mt-5 pt-4 border-t border-zinc-900 flex justify-between items-center">
                     <span className="text-[11px] font-mono text-zinc-600">
-                      {new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} | Active
+                      {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"} | Active
                     </span>
                     <a
-                      href={news.source_url}
+                      href={news.source_url || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-bold text-green-500 hover:text-green-400 flex items-center gap-1 group/btn"

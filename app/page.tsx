@@ -9,6 +9,15 @@ export default function Home() {
   const categories = ["All", "Politics", "Bollywood", "Tech", "Sports", "Crypto"];
   const API_URL = "https://tezkhabar.onrender.com";
 
+  // Array of diverse premium news abstract fallback images to avoid repetition
+  const fallbacks = [
+    "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1495020689067-958852a6565d?q=80&w=800&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=800&auto=format&fit=crop"
+  ];
+
   useEffect(() => {
     document.title = activeCategory === "All" 
       ? "तेज़ ख़बर | निष्पक्ष खबर, सबसे तेज़" 
@@ -44,9 +53,10 @@ export default function Home() {
       .trim();
   };
 
-  const getSecureImageUrl = (url: string) => {
+  const getSecureImageUrl = (url: string, index: number) => {
     if (!url || url.includes("googleusercontent.com") || url.includes("logo") || url.includes("default") || url.length < 10) {
-      return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop"; 
+      // Dynamic fallback based on array position index to stop repetition
+      return fallbacks[index % fallbacks.length]; 
     }
     if (url.startsWith("http://")) {
       return url.replace("http://", "https://");
@@ -59,21 +69,15 @@ export default function Home() {
   return (
     <div className="bg-white min-h-screen text-neutral-900 antialiased font-sans flex flex-col justify-between">
       <div>
-        
-        {/* 🔴 AUTOMATIC TOP HEADER ALERT STRIP */}
-        <div className="bg-[#cc0000] text-white text-center py-2 text-[10px] font-mono font-black tracking-widest uppercase shadow-xs">
-          ⚡ Automated Real-Time News Pipeline Active
-        </div>
 
-        {/* PREMIUM NEWS HEADER WITH LUXURY TAGLINE */}
+        {/* METROPOLITAN CLEAN NEWS HEADER */}
         <header className="bg-white border-b border-neutral-200 sticky top-0 z-50">
-          <div className="max-w-2xl mx-auto px-4 pt-5 pb-3 flex flex-row justify-between items-end">
+          <div className="max-w-2xl mx-auto px-4 pt-6 pb-4 flex flex-row justify-between items-end">
             <div>
               <h1 className="text-4xl font-black tracking-tight text-[#cc0000] font-serif leading-none select-none">
                 तेज़ ख़बर
               </h1>
-              {/* ✨ NEW PREMIUM TAGLINE */}
-              <p className="text-[10px] text-neutral-500 font-bold tracking-wide mt-2 select-none">
+              <p className="text-[10px] text-neutral-500 font-bold tracking-wide mt-2.5 select-none">
                 निष्पक्ष खबर, सबसे तेज़ <span className="text-zinc-300 mx-1">|</span> <span className="text-zinc-400 font-normal">Real-Time News Stream</span>
               </p>
             </div>
@@ -82,7 +86,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* DYNAMIC CATEGORIES LINK NAVIGATION */}
+          {/* DYNAMIC CATEGORIES NAVIGATION */}
           <div className="bg-white border-t border-neutral-100">
             <div className="max-w-2xl mx-auto px-2 flex gap-1 overflow-x-auto scrollbar-none">
               {categories.map((cat) => (
@@ -102,15 +106,15 @@ export default function Home() {
           </div>
         </header>
 
-        {/* MAIN BODY LAYOUT ENGINE */}
+        {/* MAIN BODY LAYOUT */}
         <main className="max-w-xl mx-auto px-4 py-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-36 gap-2">
               <div className="w-5 h-5 border-2 border-neutral-300 border-t-[#cc0000] rounded-full animate-spin"></div>
-              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Syncing Stream Matrix...</p>
+              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Syncing Dashboard...</p>
             </div>
           ) : newsList.length === 0 ? (
-            <div className="text-center py-20 text-neutral-400 font-mono text-xs bg-white border border-zinc-200 rounded-xl">
+            <div className="text-center py-20 text-neutral-400 font-mono text-xs bg-white border border-neutral-200 rounded-xl">
               📭 Feed stack empty. Scraper pipeline idle.
             </div>
           ) : (
@@ -137,14 +141,14 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* AUTOMATED NEWS ARTICLES CORE */}
+              {/* AUTOMATED NEWS ARTICLES STREAM */}
               <div className="divide-y divide-neutral-200">
                 {newsList.map((news, index) => {
-                  const verifiedImage = getSecureImageUrl(news.image_url);
+                  const verifiedImage = getSecureImageUrl(news.image_url, index);
                   return (
                     <article key={index} className="py-8 first:pt-0 last:pb-0 flex flex-col">
                       
-                      {/* Meta tag categories rows */}
+                      {/* Meta context rows */}
                       <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider mb-2 select-none">
                         <span className="text-[#cc0000] font-extrabold">{cleanText(news.category || "General")}</span>
                         <span>•</span>
@@ -156,11 +160,11 @@ export default function Home() {
                         {cleanText(news.title)}
                       </h2>
 
-                      {/* Premium Scaled Non-Breaking Image Frame */}
+                      {/* Premium Scaled Non-Repeating Image Frame */}
                       <div className="w-full aspect-video bg-neutral-100 rounded-xl overflow-hidden mb-5 relative flex items-center justify-center shadow-2xs">
                         <img
                           src={verifiedImage}
-                          alt="TezKhabar News Document Graphic"
+                          alt="TezKhabar News Document Layout Asset"
                           className="w-full h-full object-cover opacity-95 hover:opacity-100 transition-opacity duration-200"
                           loading="lazy"
                         />
@@ -171,7 +175,7 @@ export default function Home() {
                         {cleanText(news.content)}
                       </p>
 
-                      {/* Footer Metadata bars */}
+                      {/* Footer Metadata */}
                       <div className="mt-5 flex justify-between items-center text-[10px] font-mono text-neutral-400 select-none px-1">
                         <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}</span>
                         <a
@@ -194,7 +198,7 @@ export default function Home() {
         </main>
       </div>
 
-      {/* FOOTER AREA LINKS */}
+      {/* FOOTER */}
       <footer className="text-center py-10 text-[10px] text-neutral-400 border-t border-neutral-200 font-mono bg-white mt-16 select-none">
         © 2026 TEZKHABAR AUTOMATION GROUP NETWORKS LTD. ALL RIGHTS RESERVED.
       </footer>

@@ -11,11 +11,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [bookmarked, setBookmarked] = useState<number[]>([]);
   const [visibleCount, setVisibleCount] = useState(9);
+  
+  // 📚 Internal Reader State Framework (Bypasses external redirection)
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
 
   const categories = ["All", "Politics", "Business", "Technology", "AI", "Finance", "Sports", "Entertainment"];
   const API_URL = "https://tezkhabar.onrender.com";
 
-  // Dynamic Content-Driven Category Mapping Fallbacks to avoid repeating same image
   const categoryStockImages: { [key: string]: string[] } = {
     Politics: [
       "https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=600",
@@ -40,10 +42,13 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // SEO Canonical Strategy / OpenGraph Title Sync
-    document.title = activeCategory === "All" 
-      ? "TezKhabar Pro | Real-Time News Intelligence Engine" 
-      : `${activeCategory} Feed - TezKhabar Pro`;
+    if (selectedArticle) {
+      document.title = `${cleanText(selectedArticle.title, 50)} - तेज़ ख़बर Premium Reader`;
+    } else {
+      document.title = activeCategory === "All" 
+        ? "TezKhabar Pro | Real-Time News Intelligence Engine" 
+        : `${activeCategory} Feed - TezKhabar Pro`;
+    }
 
     async function fetchNews() {
       try {
@@ -63,9 +68,9 @@ export default function Home() {
     }
     fetchNews();
 
-    const interval = setInterval(fetchNews, 180000); // Dynamic polling loop
+    const interval = setInterval(fetchNews, 180000);
     return () => clearInterval(interval);
-  }, [activeCategory]);
+  }, [activeCategory, selectedArticle]);
 
   const cleanText = (text: string, limit: number = 110) => {
     if (!text) return "";
@@ -73,24 +78,26 @@ export default function Home() {
     return filtered.length > limit ? filtered.slice(0, limit) + "..." : filtered;
   };
 
-  // Robust fallback pipeline system addressing ISSUE #2
   const getPrioritizedImage = (newsItem: any, index: number) => {
     if (newsItem.image_url && newsItem.image_url.length > 12 && !newsItem.image_url.includes("googleusercontent.com") && !newsItem.image_url.includes("logo")) {
       return newsItem.image_url.startsWith("http://") ? newsItem.image_url.replace("http://", "https://") : newsItem.image_url;
     }
-    
-    // Priority 3 & 4: Context-driven dynamic fallbacks based on category metadata pools
     const cat = newsItem.category || "General";
     const bank = categoryStockImages[cat] || categoryStockImages["General"];
     return bank[index % bank.length];
   };
 
-  const handleArticleNavigation = (sourceUrl: string) => {
-    if (sourceUrl) window.open(sourceUrl, "_blank", "noopener,noreferrer");
+  const openInternalReader = (newsItem: any) => {
+    setSelectedArticle(newsItem);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const closeInternalReader = () => {
+    setSelectedArticle(null);
   };
 
   const toggleBookmark = (e: React.MouseEvent, id: number) => {
-    e.stopPropagation(); // Disables raw card link navigation event capture triggers
+    e.stopPropagation();
     setBookmarked(prev => prev.includes(id) ? prev.filter(b => b !== id) : [...prev, id]);
   };
 
@@ -100,7 +107,7 @@ export default function Home() {
       navigator.share({ title: item.title, url: item.source_url }).catch(console.error);
     } else {
       navigator.clipboard.writeText(item.source_url);
-      alert("Source link copied securely to clipboard console matrix!");
+      alert("Source link copied to clipboard!");
     }
   };
 
@@ -111,22 +118,21 @@ export default function Home() {
   return (
     <div className={`min-h-screen ${darkMode ? "bg-[#0F172A] text-slate-100" : "bg-slate-50 text-slate-900"} font-sans antialiased transition-colors duration-300 pb-16`}>
       
-      {/* 🌐 GLASSMORPHISM PREMIUM STICKY NAVBAR */}
+      {/* 🌐 PREMIUM GLASSMORPHISM NAVBAR */}
       <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all border-b ${darkMode ? "bg-[#0F172A]/80 border-slate-800/80 shadow-lg" : "bg-white/85 border-slate-200/60 shadow-xs"} px-4 sm:px-8 py-3.5`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-400 to-orange-500 font-serif select-none cursor-pointer" onClick={() => setActiveCategory("All")}>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-indigo-400 to-orange-500 font-serif select-none cursor-pointer" onClick={closeInternalReader}>
               तेज़ ख़बर
             </h1>
             
-            {/* Desktop Navigation Category Pills (Strictly Row Non-wrapping) */}
             <div className="hidden lg:flex items-center gap-1">
               {categories.slice(0, 6).map(cat => (
                 <button
                   key={cat}
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => { setActiveCategory(cat); closeInternalReader(); }}
                   className={`px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider transition-all duration-150 ${
-                    activeCategory === cat ? "bg-[#2563EB] text-white shadow-sm shadow-blue-500/20" : "text-slate-400 hover:text-blue-500"
+                    activeCategory === cat && !selectedArticle ? "bg-blue-600 text-white" : "text-slate-400 hover:text-blue-500"
                   }`}
                 >
                   {cat === "All" ? "Top Stories" : cat}
@@ -136,260 +142,235 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <AnimatePresence>
-              {searchOpen && (
-                <motion.input
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 160, opacity: 1 }}
-                  exit={{ width: 0, opacity: 0 }}
-                  type="text"
-                  placeholder="Type search queries..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`text-xs px-3 py-1.5 rounded-full ${darkMode ? "bg-slate-900 text-white border-slate-800" : "bg-slate-100 text-black border-slate-200"} border focus:outline-hidden`}
-                />
-              )}
-            </AnimatePresence>
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 rounded-full hover:bg-slate-800/10 text-slate-400">🔍</button>
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full hover:bg-slate-800/10 text-slate-400">{darkMode ? "☀️" : "🌙"}</button>
           </div>
         </div>
       </nav>
 
-      {/* 📱 MOBILE HORIZONTAL SCROLL CATEGORIES SYSTEM (Bypasses Issue #4) */}
-      <div className={`lg:hidden overflow-x-auto scrollbar-none py-2.5 px-4 border-b ${darkMode ? "bg-slate-950/40 border-slate-900" : "bg-white border-slate-100"}`}>
-        <div className="flex flex-row space-x-1.5 wrap-none">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap transition-all ${
-                activeCategory === cat ? "bg-[#2563EB] text-white" : darkMode ? "bg-slate-900 text-slate-400" : "bg-slate-100 text-slate-500"
-              }`}
+      {/* DYNAMIC VIEW SWITCHER */}
+      <AnimatePresence mode="wait">
+        {selectedArticle ? (
+          
+          /* 🛑 MODULE A: PREMIUM IMMERSIVE ARTICLE READER CANVAS */
+          <motion.div
+            key="reader"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="max-w-3xl mx-auto px-4 sm:px-6 mt-8 space-y-6"
+          >
+            {/* Back Nav Button */}
+            <button 
+              onClick={closeInternalReader} 
+              className="flex items-center gap-2 text-xs font-mono font-black uppercase text-[#2563EB] bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-full transition-all tracking-wider"
             >
-              {cat}
+              ← Return To Feed Stream
             </button>
-          ))}
-        </div>
-      </div>
 
-      {/* 🔴 REAL-TIME SCROLLING NEWS TICKER */}
-      {newsList.length > 0 && (
-        <div className={`py-2 px-4 overflow-hidden ${darkMode ? "bg-slate-950/30" : "bg-red-50/50"}`}>
-          <div className="max-w-6xl mx-auto flex items-center gap-3">
-            <span className="bg-[#cc0000] text-white text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-xs shrink-0 flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-white inline-block animate-ping" /> LIVE
-            </span>
-            <div className="w-full overflow-hidden relative h-4 text-xs font-bold tracking-wide">
-              <div className="absolute whitespace-nowrap flex gap-12 animate-[marquee_25s_linear_infinite] hover:[animation-play-state:paused] cursor-pointer">
-                {newsList.slice(0, 4).map((n, i) => (
-                  <span key={i} onClick={() => handleArticleNavigation(n.source_url)} className="hover:text-blue-500 transition-colors">
-                    ⚡ {cleanText(n.title, 85)}
-                  </span>
+            {/* Meta Category Tracking */}
+            <div className="flex items-center gap-3 text-xs font-mono font-bold text-slate-400 uppercase tracking-widest pt-2">
+              <span className="text-[#2563EB] font-black">{selectedArticle.category || "General"}</span>
+              <span>•</span>
+              <span>⏱️ 2 Min Read</span>
+              <span>•</span>
+              <span>{selectedArticle.created_at ? new Date(selectedArticle.created_at * 1000).toLocaleDateString() : "Live"}</span>
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-3xl sm:text-5xl font-black font-serif tracking-tight leading-tight text-slate-100">
+              {selectedArticle.title.replace(/\*\*|\[|\]/g, "")}
+            </h1>
+
+            {/* Share & Bookmark Strip Actions Bar */}
+            <div className="flex items-center gap-2 py-2 border-y border-slate-800/60">
+              <button onClick={(e) => triggerNativeShare(e, selectedArticle)} className="text-xs font-mono bg-slate-900 px-3 py-1.5 rounded-md hover:bg-slate-800">
+                📤 Share Matrix Link
+              </button>
+              <span className="text-xs font-mono text-slate-500 ml-auto">Desk: Autonomous Core Agent</span>
+            </div>
+
+            {/* Big Hero Visual Aspect Board */}
+            <div className="w-full aspect-video rounded-3xl overflow-hidden bg-slate-950 shadow-2xl">
+              <img 
+                src={getPrioritizedImage(selectedArticle, 9)} 
+                alt="Reader Target View" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Immersive Body Context */}
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed text-justify tracking-wide whitespace-pre-line font-normal font-sans pt-4 px-1">
+              {selectedArticle.content.replace(/\*\*|\[|\]/g, "")}
+              {"\n\n"}
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+            </p>
+
+            {/* 🔗 READ ORIGINAL SOURCE REDIRECT CAPTURE FOOTER BAR */}
+            <div className="mt-12 p-6 rounded-2xl bg-slate-950/40 border border-slate-800/80 flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-center sm:text-left">
+                <h4 className="text-sm font-black font-serif text-slate-200">Verify Verification Streams</h4>
+                <p className="text-xs text-slate-500">This article is gathered autonomously via our real-time content scraper loops.</p>
+              </div>
+              <a 
+                href={selectedArticle.source_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black font-sans text-xs uppercase tracking-widest px-6 py-3 rounded-xl transition-all shadow-md shadow-blue-500/20 hover:scale-102"
+              >
+                Read Original Source →
+              </a>
+            </div>
+
+          </motion.div>
+
+        ) : (
+
+          /* 🗂️ MODULE B: THE MASTER FEED GRID HOME (Default View) */
+          <motion.div
+            key="feed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* 📱 MOBILE HORIZONTAL SCROLL PILLS (Bypasses wrapping issues) */}
+            <div className="lg:hidden overflow-x-auto scrollbar-none py-2.5 px-4 border-b border-slate-900 bg-slate-950/40">
+              <div className="flex flex-row space-x-1.5 whitespace-nowrap">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${
+                      activeCategory === cat ? "bg-[#2563EB] text-white" : "bg-slate-900 text-slate-400"
+                    }`}
+                  >
+                    {cat}
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* 📰 CORE FEED MATRIX PORTAL MAIN */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-6">
-        
-        {loading ? (
-          /* SKELETON ENGINE PACKSAGES */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 h-96 bg-slate-800/20 rounded-3xl animate-pulse" />
-            <div className="lg:col-span-1 h-96 bg-slate-800/20 rounded-3xl animate-pulse" />
-          </div>
-        ) : newsList.length === 0 ? (
-          <div className="text-center py-24 rounded-3xl bg-slate-900/10 text-slate-400 font-mono text-xs">
-            📭 Structural Cluster Empty. No Responses Logged from Scraper Routers.
-          </div>
-        ) : (
-          <div className="space-y-12">
-
-            {/* ⚡ PREMIUM HERO SECTION OVERHAUL */}
-            {heroNews && activeCategory === "All" && (
-              <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                
-                {/* Large Featured Card (Addressing Issue #1: Bound Handling) */}
-                <motion.article 
-                  whileHover={{ y: -4 }}
-                  onClick={() => handleArticleNavigation(heroNews.source_url)}
-                  className={`lg:col-span-2 rounded-[24px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.03)] cursor-pointer flex flex-col justify-between transition-all duration-300 border border-transparent ${
-                    darkMode ? "bg-slate-900/30 hover:bg-slate-900/50 hover:border-slate-800" : "bg-white hover:border-slate-200"
-                  }`}
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
-                    <img src={getPrioritizedImage(heroNews, 0)} alt="Hero" className="w-full h-full object-cover transition-transform duration-300" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                    
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <span className="bg-[#2563EB] text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg">
-                        {heroNews.category || "TOP FEATURED"}
-                      </span>
-                      <span className="bg-orange-500 text-white font-mono text-[8px] uppercase tracking-widest px-2 py-0.5 rounded-md flex items-center gap-1">
-                        🔥 SCORE 9.8
-                      </span>
-                    </div>
-
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <h2 className="text-xl sm:text-3xl font-black font-serif tracking-tight text-white leading-tight">
-                        {cleanText(heroNews.title, 95)}
-                      </h2>
-                    </div>
-                  </div>
-                  <div className="p-6 sm:p-8">
-                    <p className="text-sm text-slate-400 leading-relaxed mb-6">{cleanText(heroNews.content, 160)}</p>
-                    <div className="flex items-center justify-between text-[10px] font-mono font-bold text-slate-500">
-                      <span className="bg-slate-800 text-slate-300 px-2 py-1 rounded-md">🕒 Updated 5 mins ago</span>
-                      <span className="text-[#2563EB] font-black tracking-widest text-[9px]">READ MORE →</span>
-                    </div>
-                  </div>
-                </motion.article>
-
-                {/* 📈 HORIZONTAL CARD DESIGN QUICK BRIEFINGS */}
-                <div className="lg:col-span-1 space-y-4">
-                  <div className="flex justify-between items-center px-1">
-                    <h3 className="text-xs font-black tracking-widest uppercase text-orange-500">🔥 Trending Feed Stream</h3>
-                    <span className="text-[10px] font-mono text-slate-500">Pulse Engine</span>
-                  </div>
-                  <div className="space-y-3.5 max-h-[510px] overflow-y-auto pr-1 scrollbar-none">
-                    {trendingNews.map((news, i) => (
-                      <motion.div 
-                        whileHover={{ y: -2 }}
-                        onClick={() => handleArticleNavigation(news.source_url)}
-                        key={i} 
-                        className={`p-4 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.01)] flex gap-4 items-center cursor-pointer transition-all border border-transparent ${
-                          darkMode ? "bg-slate-900/20 hover:bg-slate-900/40 hover:border-slate-800" : "bg-white hover:border-slate-200"
-                        }`}
-                      >
-                        <div className="w-20 h-20 rounded-[16px] bg-slate-950 overflow-hidden shrink-0">
-                          <img src={getPrioritizedImage(news, i + 1)} alt="trend" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="space-y-1.5 flex-grow">
-                          <div className="flex justify-between items-center text-[8px] font-mono font-black text-[#2563EB] uppercase">
-                            <span>{news.category || "Hot"}</span>
-                            <span className="text-slate-500">Score {8.5 - i * 0.4}</span>
-                          </div>
-                          <h4 className="text-xs font-extrabold leading-snug line-clamp-2 text-slate-200">{cleanText(news.title, 70)}</h4>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+            {/* 📰 MAIN GRID CONTAINER ENVIRONMENT */}
+            <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-6">
+              {loading ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 h-96 bg-slate-800/20 rounded-3xl animate-pulse" />
+                  <div className="lg:col-span-1 h-96 bg-slate-800/20 rounded-3xl animate-pulse" />
                 </div>
+              ) : newsList.length === 0 ? (
+                <div className="text-center py-24 rounded-3xl bg-slate-900/10 text-slate-400 font-mono text-xs">
+                  📭 Structural Feed Stack Idle.
+                </div>
+              ) : (
+                <div className="space-y-12">
 
-              </section>
-            )}
-
-            {/* 🗂️ LATEST STREAM COMPLIANCE GRIDS */}
-            <section className="space-y-6">
-              <h3 className="text-xs font-black tracking-widest uppercase text-slate-400 flex items-center gap-2 px-1">
-                <span>📰</span> {activeCategory === "All" ? "LATEST INTELLIGENCE STREAM" : `${activeCategory} ARCHITECTURE FEED`}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {(activeCategory === "All" ? coreFeedStream : newsList).map((news, index) => (
-                  <motion.article
-                    whileHover={{ y: -5 }}
-                    onClick={() => handleArticleNavigation(news.source_url)}
-                    key={index}
-                    className={`rounded-[24px] overflow-hidden shadow-[0_12px_35px_rgba(0,0,0,0.04)] flex flex-col justify-between cursor-pointer transition-all duration-200 border border-transparent ${
-                      darkMode ? "bg-slate-900/20 hover:bg-slate-900/40 hover:border-slate-800" : "bg-white hover:border-slate-200"
-                    }`}
-                  >
-                    <div>
-                      {/* Media container */}
-                      <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
-                        <img src={getPrioritizedImage(news, index + 6)} alt="stream" className="w-full h-full object-cover" loading="lazy" />
-                        
-                        <div className="absolute bottom-3 left-3 flex gap-1.5 items-center select-none">
-                          <span className="bg-slate-900/80 backdrop-blur-md text-white font-mono text-[8px] tracking-widest uppercase px-2 py-0.5 rounded-md">
-                            {news.category || "General"}
+                  {/* HERO ELEMENT BOX */}
+                  {heroNews && activeCategory === "All" && (
+                    <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                      <motion.article 
+                        whileHover={{ y: -4 }}
+                        onClick={() => openInternalReader(heroNews)}
+                        className="lg:col-span-2 rounded-[24px] overflow-hidden shadow-xl cursor-pointer flex flex-col bg-slate-900/30 border border-transparent hover:border-slate-800/80 transition-all duration-300"
+                      >
+                        <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
+                          <img src={getPrioritizedImage(heroNews, 0)} alt="Hero" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          <span className="absolute top-4 left-4 bg-[#2563EB] text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-md shadow-lg">
+                            {heroNews.category || "TOP STORY"}
                           </span>
-                          <span className="bg-red-600 text-white font-black text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded-md shadow-xs">LIVE</span>
+                          <div className="absolute bottom-6 left-6 right-6">
+                            <h2 className="text-xl sm:text-3xl font-black font-serif tracking-tight text-white leading-tight">
+                              {cleanText(heroNews.title, 95)}
+                            </h2>
+                          </div>
                         </div>
+                        <div className="p-6">
+                          <p className="text-sm text-slate-400 leading-relaxed mb-4">{cleanText(heroNews.content, 160)}</p>
+                          <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest font-bold">
+                            👁️ Click to Open Internal Reader
+                          </div>
+                        </div>
+                      </motion.article>
 
-                        <div className="absolute top-3 right-3 flex gap-1">
-                          <button onClick={(e) => toggleBookmark(e, index)} className="p-2 bg-slate-900/60 backdrop-blur-md rounded-full text-[10px] hover:bg-slate-900 transition-colors">
-                            {bookmarked.includes(index) ? "❤️" : "🤍"}
-                          </button>
-                          <button onClick={(e) => triggerNativeShare(e, news)} className="p-2 bg-slate-900/60 backdrop-blur-md rounded-full text-[10px] hover:bg-slate-900 transition-colors">
-                            📤
-                          </button>
+                      {/* TRENDING SIDE PANEL */}
+                      <div className="lg:col-span-1 space-y-4">
+                        <h3 className="text-xs font-black tracking-widest uppercase text-orange-500 px-1">📈 Trending Matrix</h3>
+                        <div className="space-y-3.5 max-h-[500px] overflow-y-auto scrollbar-none pr-1">
+                          {trendingNews.map((news, i) => (
+                            <div 
+                              onClick={() => openInternalReader(news)}
+                              key={i} 
+                              className="p-4 rounded-[24px] bg-slate-900/20 hover:bg-slate-900/40 border border-transparent hover:border-slate-800 cursor-pointer flex gap-4 items-center transition-all shadow-xs"
+                            >
+                              <div className="w-16 h-16 rounded-[16px] bg-slate-950 overflow-hidden shrink-0">
+                                <img src={getPrioritizedImage(news, i + 1)} alt="trend" className="w-full h-full object-cover" />
+                              </div>
+                              <h4 className="text-xs font-extrabold leading-snug line-clamp-2 text-slate-200">{cleanText(news.title, 70)}</h4>
+                            </div>
+                          ))}
                         </div>
                       </div>
+                    </section>
+                  )}
 
-                      {/* Text details content wrapper block */}
-                      <div className="p-6 space-y-2.5">
-                        <h4 className="text-base font-extrabold font-serif leading-snug line-clamp-2 tracking-tight text-slate-100 group-hover:text-blue-500">
-                          {cleanText(news.title, 75)}
-                        </h4>
-                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
-                          {cleanText(news.content, 110)}
-                        </p>
-                      </div>
+                  {/* FEEDS GRID */}
+                  <section className="space-y-6">
+                    <h3 className="text-xs font-black tracking-widest uppercase text-slate-400 px-1">📰 LATEST BROADCAST</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {(activeCategory === "All" ? coreFeedStream : newsList).map((news, index) => (
+                        <motion.article
+                          whileHover={{ y: -5 }}
+                          onClick={() => openInternalReader(news)}
+                          key={index}
+                          className="rounded-[24px] overflow-hidden shadow-lg bg-slate-900/20 hover:bg-slate-900/40 border border-transparent hover:border-slate-800 cursor-pointer flex flex-col justify-between transition-all duration-200"
+                        >
+                          <div>
+                            <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
+                              <img src={getPrioritizedImage(news, index + 6)} alt="stream" className="w-full h-full object-cover" loading="lazy" />
+                              <span className="absolute bottom-3 left-3 bg-slate-900/80 text-white font-mono text-[8px] tracking-widest uppercase px-2 py-0.5 rounded-md">
+                                {news.category || "General"}
+                              </span>
+                              <div className="absolute top-3 right-3 flex gap-1">
+                                <button onClick={(e) => toggleBookmark(e, index)} className="p-2 bg-slate-900/60 backdrop-blur-md rounded-full text-[10px]">
+                                  {bookmarked.includes(index) ? "❤️" : "🤍"}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-6 space-y-2">
+                              <h4 className="text-base font-extrabold font-serif leading-snug text-slate-100 line-clamp-2">{cleanText(news.title, 75)}</h4>
+                              <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{cleanText(news.content, 110)}</p>
+                            </div>
+                          </div>
+                          <div className="px-6 py-4 border-t border-slate-800/20 bg-slate-950/10 text-[10px] font-mono text-slate-500 flex justify-between">
+                            <span>🕒 Stream Active</span>
+                            <span className="text-[#2563EB] font-black">Open View →</span>
+                          </div>
+                        </motion.article>
+                      ))}
                     </div>
 
-                    {/* Footer specifications elements */}
-                    <div className="px-6 py-4 border-t border-slate-800/20 bg-slate-950/10 flex justify-between items-center text-[10px] font-mono text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <span>🌐</span>
-                        <span className="uppercase tracking-wider font-bold text-slate-400">SOURCE FEED</span>
+                    {newsList.length > visibleCount && (
+                      <div className="text-center pt-8">
+                        <button onClick={() => setVisibleCount(prev => prev + 6)} className="px-6 py-2.5 bg-slate-800/30 border border-slate-800/40 rounded-full text-xs font-black font-mono uppercase tracking-widest hover:bg-[#2563EB] transition-all">
+                          ⚡ Load More Stories
+                        </button>
                       </div>
-                      <span>⏱️ 1 min read</span>
-                    </div>
-                  </motion.article>
-                ))}
-              </div>
+                    )}
+                  </section>
 
-              {/* INFINITE SCROLL LOADER EMULATION BUTTON LINK */}
-              {newsList.length > visibleCount && (
-                <div className="text-center pt-8">
-                  <button 
-                    onClick={() => setVisibleCount(prev => prev + 6)}
-                    className="px-6 py-2.5 bg-slate-800/30 border border-slate-800/40 rounded-full text-xs font-black font-mono uppercase tracking-widest hover:bg-[#2563EB] hover:text-white transition-all shadow-xs"
-                  >
-                    ⚡ Load More Streams
-                  </button>
                 </div>
               )}
-            </section>
-
-            {/* 📩 LUXURY NEWSLETTER HUB */}
-            <section className={`rounded-[24px] p-8 sm:p-12 relative overflow-hidden ${darkMode ? "bg-gradient-to-br from-slate-900 to-slate-950 shadow-2xl" : "bg-blue-50/40"}`}>
-              <div className="absolute top-0 right-0 w-36 h-36 bg-[#2563EB]/10 rounded-full blur-3xl" />
-              <div className="max-w-xl space-y-4 relative z-10">
-                <span className="text-[10px] font-mono font-black tracking-widest uppercase text-[#2563EB]">Real-Time Data Distribution</span>
-                <h3 className="text-2xl sm:text-3xl font-black font-serif tracking-tight">Subscribe to Real-Time Context briefings</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">Get filtered high-signal technological updates, macro-economic metrics and automation scripts pushed straight to your mailbox console logs daily.</p>
-                <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                  <input type="email" placeholder="Enter clean active corporate email..." className={`text-xs px-4 py-3 rounded-xl focus:outline-hidden font-mono ${darkMode ? "bg-slate-900 text-white" : "bg-white text-black"}`} />
-                  <button className="bg-[#2563EB] text-white font-bold text-xs px-6 py-3 rounded-xl whitespace-nowrap shadow-md shadow-blue-500/10">Join Channels</button>
-                </div>
-              </div>
-            </section>
-
-          </div>
+            </main>
+          </motion.div>
         )}
-      </main>
+      </AnimatePresence>
 
-      {/* 🏁 GLOBAL MEDIA COMPACT FOOTER */}
-      <footer className={`border-t font-mono text-xs text-slate-500 mt-24 pt-12 px-6 sm:px-12 ${darkMode ? "bg-slate-950 border-slate-900" : "bg-white border-slate-200"}`}>
+      {/* 🏁 FOOTER */}
+      <footer className="border-t font-mono text-xs text-slate-500 mt-24 pt-12 px-6 sm:px-12 bg-slate-950 border-slate-900 text-center sm:text-left">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6 pb-8">
-          <div className="text-center sm:text-left space-y-1">
+          <div>
             <h4 className="font-black font-serif tracking-tight text-slate-300 text-lg">TEZKHABAR AI</h4>
-            <p className="text-[10px]">Real-Time Autonomous Content Scraper & News Matrix Platform.</p>
+            <p className="text-[10px]">Real-Time Autonomous Content Reader Matrix Platform.</p>
           </div>
-          <div className="flex flex-wrap justify-center gap-6 text-[10px] font-bold tracking-widest uppercase">
-            <a href="#" className="hover:text-blue-500">API Channels</a>
-            <a href="#" className="hover:text-blue-500">Infrastructure</a>
-            <a href="#" className="hover:text-blue-500">Terminals</a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto text-center border-t border-slate-800/20 pt-6 text-[9px] tracking-widest text-slate-600">
-          © 2026 TEZKHABAR CONVERGENCE LABS. PIPELINES SECURELY ENCRYPTED. ALL RIGHTS RESERVED.
         </div>
       </footer>
 

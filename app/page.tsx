@@ -11,7 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     document.title = activeCategory === "All" 
-      ? "तेज़ ख़बर | Real-time Automated News Portal" 
+      ? "तेज़ ख़बर | Premium Real-Time News Platform" 
       : `${activeCategory} - तेज़ ख़बर`;
 
     async function fetchNews() {
@@ -46,7 +46,7 @@ export default function Home() {
 
   const getSecureImageUrl = (url: string) => {
     if (!url || url.includes("googleusercontent.com") || url.includes("logo") || url.includes("default") || url.length < 10) {
-      return null; 
+      return "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=800&auto=format&fit=crop"; 
     }
     if (url.startsWith("http://")) {
       return url.replace("http://", "https://");
@@ -57,31 +57,46 @@ export default function Home() {
   const quickBriefStream = newsList.slice(0, 5);
 
   return (
-    <div className="bg-white min-h-screen text-neutral-900 antialiased font-sans flex flex-col justify-between">
+    <div className="bg-[#fcfcfc] min-h-screen text-neutral-900 antialiased font-sans flex flex-col justify-between">
       <div>
         
-        {/* Ticker strip */}
-        <div className="bg-[#cc0000] text-white text-center py-2 text-[10px] font-mono font-black tracking-widest uppercase shadow-xs">
+        {/* 🔴 TOP AGGREGATOR RUNNING TICKER */}
+        <div className="bg-[#cc0000] text-white text-center py-2 text-[10px] font-mono font-black tracking-widest uppercase">
           ⚡ Automated Real-Time News Pipeline Active
         </div>
 
-        {/* Brand Bar */}
-        <header className="bg-white border-b border-neutral-200 sticky top-0 z-50">
-          <div className="max-w-2xl mx-auto px-4 pt-5 pb-3 flex flex-row justify-between items-end">
-            <div>
-              <h1 className="text-4xl font-black tracking-tight text-[#cc0000] font-serif leading-none">
-                तेज़ ख़बर
-              </h1>
-              <p className="text-[9px] text-neutral-400 font-mono tracking-widest uppercase font-black mt-1.5">
-                Premium Automation Web Feed
-              </p>
+        {/* METROPOLITAN CLEAN NEWS HEADER */}
+        <header className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-xs">
+          <div className="max-w-2xl mx-auto px-4 pt-5 pb-3 flex flex-col gap-2">
+            <div className="flex flex-row justify-between items-end">
+              <div>
+                <h1 className="text-4xl font-black tracking-tight text-[#cc0000] font-serif leading-none select-none">
+                  तेज़ ख़बर
+                </h1>
+                <p className="text-[9px] text-neutral-400 font-mono tracking-widest uppercase font-black mt-1.5">
+                  Premium Automation Web Feed
+                </p>
+              </div>
+              <div className="text-[10px] font-mono font-bold text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded">
+                {new Date().toLocaleDateString('hi-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
             </div>
-            <div className="text-[10px] font-mono font-bold text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded">
-              {new Date().toLocaleDateString('hi-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+
+            {/* 🔥 AUTHOR PROFILE SEGMENT INTEGRATION */}
+            <div className="border-t border-neutral-100 pt-2.5 mt-1 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#cc0000] text-white font-serif font-black flex items-center justify-center text-xs shadow-xs">
+                MP
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-neutral-900 tracking-tight">Mantu Patra</h4>
+                <p className="text-[10px] text-neutral-500 leading-tight">
+                  AI Automation & Backend Developer • Custom Bots, Python APIs & Automation Architect
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Navigation Bar */}
+          {/* DYNAMIC NAVIGATION LINKS */}
           <div className="bg-white border-t border-neutral-100">
             <div className="max-w-2xl mx-auto px-2 flex gap-1 overflow-x-auto scrollbar-none">
               {categories.map((cat) => (
@@ -91,7 +106,7 @@ export default function Home() {
                   className={`px-4 py-3.5 text-xs font-bold uppercase tracking-wider transition-all duration-150 whitespace-nowrap border-b-2 ${
                     activeCategory === cat
                       ? "border-[#cc0000] text-[#cc0000] font-black"
-                      : "border-transparent text-neutral-400 hover:text-zinc-900"
+                      : "border-transparent text-neutral-400 hover:text-neutral-900"
                   }`}
                 >
                   {cat === "All" ? "Main Feed" : cat}
@@ -101,21 +116,21 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Content Body */}
-        <main className="max-w-xl mx-auto px-4 py-6">
+        {/* 📰 MAIN GRID STRUCTURAL STREAM */}
+        <main className="max-w-2xl mx-auto px-4 py-6">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-36 gap-2">
               <div className="w-5 h-5 border-2 border-neutral-300 border-t-[#cc0000] rounded-full animate-spin"></div>
-              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Syncing Stream Layout...</p>
+              <p className="text-neutral-400 font-mono text-[9px] tracking-widest uppercase">Mapping Frame Pipeline...</p>
             </div>
           ) : newsList.length === 0 ? (
             <div className="text-center py-20 text-neutral-400 font-mono text-xs bg-white border border-neutral-200 rounded-xl">
-              📭 Feed stack empty. Scraper pipeline idle.
+              📭 Active stream stack empty. Backend pipeline idle.
             </div>
           ) : (
             <div className="space-y-8">
               
-              {/* Quick briefing box */}
+              {/* BRIEF HOOK RE-LINKS (NDTV TRENDING MATRIX) */}
               <div className="bg-neutral-50 border border-neutral-200/60 p-4 rounded-xl">
                 <h3 className="text-[10px] font-mono font-black text-neutral-500 uppercase tracking-widest mb-3 pb-1.5 border-b border-neutral-200/60">
                   ⚡ QUICK BRIEFING
@@ -136,42 +151,42 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Central stream list */}
+              {/* DYNAMIC NEWSPAPER STREAM LAYOUT */}
               <div className="divide-y divide-neutral-200">
                 {newsList.map((news, index) => {
                   const verifiedImage = getSecureImageUrl(news.image_url);
                   return (
-                    <article key={index} className="py-8 first:pt-0 last:pb-0 flex flex-col">
+                    <article key={index} className="py-8 first:pt-0 last:pb-0 flex flex-col font-sans">
                       
-                      {/* Meta context info */}
+                      {/* Specs Meta info row */}
                       <div className="flex items-center gap-2 text-[10px] text-neutral-400 font-mono font-bold uppercase tracking-wider mb-2">
-                        <span className="text-[#cc0000]">{cleanText(news.category || "General")}</span>
+                        <span className="text-[#cc0000] font-black">{cleanText(news.category || "General")}</span>
                         <span>•</span>
                         <span>{news.badge ? cleanText(news.badge) : "LIVE FEED"}</span>
                       </div>
 
-                      {/* NDTV Layout matching title sequence */}
+                      {/* Header Title Text */}
                       <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-neutral-950 leading-tight font-serif hover:text-[#cc0000] transition-colors mb-4">
                         {cleanText(news.title)}
                       </h2>
 
-                      {/* Premium Media Layout Frame (Shows fallback structure if URL breaks) */}
-                      <div className="w-full aspect-video bg-neutral-100 rounded-xl overflow-hidden mb-5 relative flex items-center justify-center">
+                      {/* Fluid Non-Stretched Padded Media Frame */}
+                      <div className="w-full aspect-video bg-neutral-100 rounded-xl overflow-hidden mb-5 shadow-2xs">
                         <img
-                          src={verifiedImage || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600&auto=format&fit=crop"}
-                          alt="TezKhabar News Stream"
-                          className="w-full h-full object-cover"
+                          src={verifiedImage}
+                          alt="TezKhabar Asset Frame Feed"
+                          className="w-full h-full object-cover opacity-95"
                           loading="lazy"
                         />
                       </div>
                       
-                      {/* Crisp responsive copy context description */}
-                      <p className="text-neutral-700 text-sm sm:text-base font-normal leading-relaxed text-justify tracking-wide whitespace-pre-line px-1">
+                      {/* News Copy Content Context Text */}
+                      <p className="text-neutral-700 text-sm sm:text-base font-normal leading-relaxed text-justify tracking-wide whitespace-pre-line px-0.5">
                         {cleanText(news.content)}
                       </p>
 
-                      {/* Action triggers */}
-                      <div className="mt-5 flex justify-between items-center text-[10px] font-mono text-neutral-400 select-none px-1">
+                      {/* Action items Footer */}
+                      <div className="mt-5 flex justify-between items-center text-[10px] font-mono text-neutral-400 select-none px-0.5">
                         <span>🕒 {news.created_at ? new Date(news.created_at * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Recent"}</span>
                         <a
                           href={news.source_url || "#"}

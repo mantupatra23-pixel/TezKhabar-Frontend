@@ -56,7 +56,8 @@ export default function GlobalApplicationEngine() {
         const data = await res.json();
         setNewsList(Array.isArray(data) ? data : []);
       } catch (err) {
-        print("Telemetry error logging stream mismatch.");
+        console.error("Telemetry error logging stream mismatch.");
+
       } finally {
         setLoading(false);
       }

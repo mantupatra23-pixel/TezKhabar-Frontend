@@ -2,12 +2,23 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getArticleBySlug } from "@/lib/api";
+import { getArticleBySlug, getLatestNews } from "@/lib/api";
 import CategoryFallback from "@/components/news/CategoryFallback";
 import AskTezKhabar from "@/components/ai/AskTezKhabar";
 
 interface PageProps {
   params: { slug: string };
+}
+
+export async function generateStaticParams() {
+  try {
+    const articles = await getLatestNews(50);
+    return articles.map((art) => ({
+      slug: art.slug,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -81,8 +92,14 @@ export default async function ArticlePage({ params }: PageProps) {
       {/* Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-wider text-brand-blue mb-4">
         <ol className="flex items-center space-x-2">
-          <li><Link href="/" className="hover:underline">Home</Link></li>
-          <li><span>/</span></li>
+          <li>
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>
+          </li>
+          <li>
+            <span>/</span>
+          </li>
           <li>
             <Link href={`/category/${article.category}`} className="hover:underline capitalize">
               {article.category}
@@ -133,7 +150,7 @@ export default async function ArticlePage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Quick Summary (Rendered only when key facts exist) */}
+      {/* Quick Summary */}
       {article.keyFacts && article.keyFacts.length > 0 && (
         <div className="bg-brand-creamLight border-l-4 border-brand-peach p-5 rounded-r my-8">
           <h2 className="text-xs font-bold uppercase tracking-wider text-brand-navy mb-2">
@@ -164,7 +181,10 @@ export default async function ArticlePage({ params }: PageProps) {
           </h3>
           <ul className="space-y-2">
             {article.sources.map((s, i) => (
-              <li key={i} className="text-xs flex items-center justify-between bg-brand-creamLight p-2.5 rounded border border-brand-sage/40">
+              <li
+                key={i}
+                className="text-xs flex items-center justify-between bg-brand-creamLight p-2.5 rounded border border-brand-sage/40"
+              >
                 <span className="font-semibold text-brand-navy">{s.name}</span>
                 {s.url && (
                   <a

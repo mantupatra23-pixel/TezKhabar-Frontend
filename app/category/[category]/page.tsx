@@ -7,6 +7,19 @@ interface CategoryPageProps {
   params: { category: string };
 }
 
+export function generateStaticParams() {
+  return [
+    { category: "india" },
+    { category: "politics" },
+    { category: "business" },
+    { category: "technology" },
+    { category: "ai" },
+    { category: "finance" },
+    { category: "sports" },
+    { category: "entertainment" },
+  ];
+}
+
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const cat = params.category.charAt(0).toUpperCase() + params.category.slice(1);
   return {

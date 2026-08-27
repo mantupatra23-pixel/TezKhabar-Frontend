@@ -13,12 +13,13 @@ interface PageProps {
 export async function generateStaticParams() {
   try {
     const articles = await getLatestNews(50);
-    return articles.map((art) => ({
-      slug: art.slug,
-    }));
-  } catch {
-    return [];
+    if (articles && articles.length > 0) {
+      return articles.map((art) => ({ slug: art.slug }));
+    }
+  } catch (e) {
+    console.error("Static params fetch error:", e);
   }
+  return [{ slug: "latest-updates" }];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -89,7 +90,6 @@ export default async function ArticlePage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Breadcrumb navigation */}
       <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-wider text-brand-blue mb-4">
         <ol className="flex items-center space-x-2">
           <li>
@@ -108,7 +108,6 @@ export default async function ArticlePage({ params }: PageProps) {
         </ol>
       </nav>
 
-      {/* Main Headline */}
       <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-brand-navy leading-[1.15]">
         {article.title}
       </h1>
@@ -119,7 +118,6 @@ export default async function ArticlePage({ params }: PageProps) {
         </p>
       )}
 
-      {/* Metadata */}
       <div className="flex items-center justify-between text-xs text-brand-blue font-medium py-4 my-6 border-y border-brand-sage/60">
         <div>
           <span>Reported by </span>
@@ -134,7 +132,6 @@ export default async function ArticlePage({ params }: PageProps) {
         </time>
       </div>
 
-      {/* Featured Media */}
       <div className="relative aspect-[16/9] w-full rounded overflow-hidden my-6 bg-brand-sage/20">
         {article.image ? (
           <Image
@@ -150,7 +147,6 @@ export default async function ArticlePage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Quick Summary */}
       {article.keyFacts && article.keyFacts.length > 0 && (
         <div className="bg-brand-creamLight border-l-4 border-brand-peach p-5 rounded-r my-8">
           <h2 className="text-xs font-bold uppercase tracking-wider text-brand-navy mb-2">
@@ -164,7 +160,6 @@ export default async function ArticlePage({ params }: PageProps) {
         </div>
       )}
 
-      {/* Article Full Body */}
       <div className="prose font-sans text-[17px] sm:text-[18px] text-brand-navy leading-[1.8] space-y-6">
         {article.content ? (
           <div dangerouslySetInnerHTML={{ __html: article.content }} />
@@ -173,7 +168,6 @@ export default async function ArticlePage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Multi-Source Attribution */}
       {article.sources && article.sources.length > 0 && (
         <section className="mt-12 pt-6 border-t border-brand-sage/60">
           <h3 className="text-xs uppercase tracking-widest font-bold text-brand-blue mb-3">
@@ -202,7 +196,6 @@ export default async function ArticlePage({ params }: PageProps) {
         </section>
       )}
 
-      {/* AI Reader Explainer */}
       <AskTezKhabar articleSlug={article.slug} articleTitle={article.title} />
     </article>
   );

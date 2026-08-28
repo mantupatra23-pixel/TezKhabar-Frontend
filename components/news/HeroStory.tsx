@@ -1,15 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
-import { NewsArticle } from "@/lib/api/types";
+import { NewsArticle, stripHtml } from "@/lib/api";
 import CategoryFallback from "./CategoryFallback";
 
 export default function HeroStory({ article }: { article: NewsArticle }) {
+  const displaySummary = stripHtml(article.dek || article.summary || "");
+
   return (
     <article className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white border border-brand-sage rounded p-4 sm:p-6 shadow-sm mb-8">
       <div className="lg:col-span-7 relative aspect-[16/10] w-full rounded overflow-hidden bg-brand-sage/30">
-        {article.image ? (
+        {article.image_url ? (
           <Image
-            src={article.image}
+            src={article.image_url}
             alt={article.title}
             fill
             sizes="(max-width: 1024px) 100vw, 60vw"
@@ -37,15 +39,15 @@ export default function HeroStory({ article }: { article: NewsArticle }) {
             </h2>
           </Link>
 
-          {article.description && (
+          {displaySummary && (
             <p className="text-sm text-brand-navy/80 mt-3 leading-relaxed line-clamp-3">
-              {article.description}
+              {displaySummary}
             </p>
           )}
         </div>
 
         <div className="mt-6 pt-4 border-t border-brand-sage/50 flex items-center justify-between">
-          <span className="text-xs font-bold text-brand-navy">{article.source}</span>
+          <span className="text-xs font-bold text-brand-navy">{article.source_name}</span>
           <Link
             href={`/news/${article.slug}`}
             className="bg-brand-blue text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-brand-navy transition-colors"

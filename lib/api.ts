@@ -1,177 +1,273 @@
 export interface NewsSource {
   name: string;
   url?: string;
-  stance?: string;
+  domain?: string;
+  published_at?: string;
 }
 
 export interface NewsArticle {
-  id: string;
   slug: string;
   title: string;
-  description: string;
-  content: string;
-  image?: string;
+  dek?: string;
+  summary?: string;
+  content?: string;
   category: string;
-  source: string;
-  sourceUrl?: string;
-  publishedAt: string;
-  updatedAt?: string;
-  author?: string;
-  keyFacts?: string[];
+  subcategory?: string;
+  badge?: string;
+  image_url?: string | null;
+  source_url?: string;
+  source_name: string;
+  source_domain?: string;
+  published_at: string;
+  updated_at?: string;
+  created_at?: string;
+  ai_generated?: boolean;
+  content_status?: string;
+  confidence?: string;
+  canonical_source_url?: string;
+  canonical_url?: string;
+  word_count?: number;
   sources?: NewsSource[];
-  isBreaking?: boolean;
+  key_facts?: string[];
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://tezkhabar.onrender.com").replace(/\/+$/, "");
+export const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || "https://tezkhabar.onrender.com"
+).replace(/\/+$/, "");
 
 /**
- * Safe fetch with 30s timeout for Render backend cold-starts
+ * Utility to strip HTML tags safely for news card excerpts
  */
-async function safeFetch(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<Response | null> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-    clearTimeout(timer);
-    return response;
-  } catch (error) {
-    clearTimeout(timer);
-    return null;
-  }
+export function stripHtml(html: string = ""): string {
+  return html.replace(/<[^>]*>?/gm, "").trim();
 }
 
+/**
+ * Normalizes any backend article document format into a predictable NewsArticle
+ */
 export function normalizeArticle(raw: any): NewsArticle {
   if (!raw || typeof raw !== "object") {
     return {
-      id: "unknown",
-      slug: "news-update",
-      title: "TezKhabar News Wire",
-      description: "",
-      content: "",
+      slug: "news-story",
+      title: "News Update",
       category: "india",
-      source: "TezKhabar",
-      publishedAt: new Date().toISOString(),
+      source_name: "TezKhabar Wire",
+      published_at: new Date().toISOString(),
     };
   }
 
-  const title = String(raw.title || raw.headline || "Untitled Story").trim();
-  const fallbackSlug = (raw.id || raw._id || title)
-    .toString()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
+  const title = String(raw.title || raw.headline || "News Update").trim();
+  const rawSlug = raw.slug || raw._id || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
+  const slug = String(rawSlug).trim();
 
-  const slug = String(raw.slug || raw.url_slug || fallbackSlug);
-  const image = raw.image || raw.image_url || raw.imageUrl || raw.thumbnail || undefined;
+  const image =
+    raw.image_url ??
+    raw.imageUrl ??
+    raw.image ??
+    raw.thumbnail ??
+    raw.cover_image ??
+    null;
+
+  const validImage = typeof image === "string" && image.startsWith("http") ? image : null;
+
+  const rawSummary = raw.dek || raw.summary || raw.description || "";
+  const cleanSummary = stripHtml(rawSummary);
+
+  const rawContent = raw.content || raw.body || raw.article_text || cleanSummary;
 
   let sources: NewsSource[] = [];
   if (Array.isArray(raw.sources)) {
     sources = raw.sources.map((s: any) => ({
-      name: typeof s === "string" ? s : s.name || s.source || "TezKhabar Wire",
+      name: typeof s === "string" ? s : s.name || s.source || "Source",
       url: s.url || s.link || undefined,
-      stance: s.stance || undefined,
+      domain: s.domain || undefined,
+      published_at: s.published_at || undefined,
     }));
   }
 
   let keyFacts: string[] = [];
   if (Array.isArray(raw.key_facts)) keyFacts = raw.key_facts;
   else if (Array.isArray(raw.keyFacts)) keyFacts = raw.keyFacts;
-  else if (Array.isArray(raw.highlights)) keyFacts = raw.highlights;
 
   return {
-    id: String(raw.id || raw._id || slug),
     slug: slug,
     title: title,
-    description: String(raw.description || raw.summary || raw.dek || "").trim(),
-    content: String(raw.content || raw.body || raw.article_text || "").trim(),
-    image: typeof image === "string" && image.startsWith("http") ? image : undefined,
+    dek: String(raw.dek || "").trim(),
+    summary: cleanSummary || title,
+    content: rawContent,
     category: String(raw.category || "india").toLowerCase(),
-    source: String(raw.source || raw.publisher || raw.source_name || "TezKhabar Wire"),
-    sourceUrl: raw.source_url || raw.sourceUrl || raw.url || undefined,
-    publishedAt: raw.published_at || raw.publishedAt || raw.createdAt || new Date().toISOString(),
-    updatedAt: raw.updated_at || raw.updatedAt || undefined,
-    author: raw.author || raw.byline || undefined,
-    keyFacts: keyFacts.length > 0 ? keyFacts : undefined,
-    sources: sources.length > 0 ? sources : undefined,
-    isBreaking: Boolean(raw.is_breaking || raw.isBreaking || raw.breaking),
+    subcategory: raw.subcategory || "India",
+    badge: raw.badge || undefined,
+    image_url: validImage,
+    source_url: raw.source_url || raw.sourceUrl || raw.url || "#",
+    source_name: String(raw.source_name || raw.source || "TezKhabar Wire"),
+    source_domain: raw.source_domain || undefined,
+    published_at: String(raw.published_at || raw.publishedAt || raw.created_at || new Date().toISOString()),
+    updated_at: raw.updated_at || undefined,
+    created_at: raw.created_at || undefined,
+    ai_generated: Boolean(raw.ai_generated),
+    content_status: String(raw.content_status || "published"),
+    confidence: String(raw.confidence || "developing"),
+    canonical_source_url: raw.canonical_source_url || raw.source_url || undefined,
+    canonical_url: raw.canonical_url || `https://tezkhabar-frontend.onrender.com/news/${slug}`,
+    word_count: Number(raw.word_count || 0),
+    sources: sources,
+    key_facts: keyFacts,
   };
 }
 
-export async function getLatestNews(limit = 20): Promise<NewsArticle[]> {
-  try {
-    let res = await safeFetch(`${API_BASE}/api/news?limit=${limit}`);
-    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/news?limit=${limit}`);
-    if (!res || !res.ok) return [];
+/**
+ * Universal array extractor supporting:
+ * 1. payload.items (Current production backend)
+ * 2. payload.articles
+ * 3. payload.news
+ * 4. payload (direct array)
+ */
+export function normalizeNewsResponse(payload: unknown): NewsArticle[] {
+  if (!payload) return [];
 
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data.articles || data.results || data.data || [];
-    return list.map(normalizeArticle);
-  } catch {
+  let rawList: any[] = [];
+
+  if (Array.isArray(payload)) {
+    rawList = payload;
+  } else if (payload && typeof payload === "object") {
+    const obj = payload as Record<string, any>;
+    if (Array.isArray(obj.items)) {
+      rawList = obj.items;
+    } else if (Array.isArray(obj.articles)) {
+      rawList = obj.articles;
+    } else if (Array.isArray(obj.news)) {
+      rawList = obj.news;
+    } else if (Array.isArray(obj.results)) {
+      rawList = obj.results;
+    } else if (Array.isArray(obj.data)) {
+      rawList = obj.data;
+    }
+  }
+
+  return rawList.map(normalizeArticle);
+}
+
+/**
+ * Fetch latest news articles from production backend
+ */
+export async function getLatestNews(limit = 15): Promise<NewsArticle[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/news?limit=${limit}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error(`[TezKhabar API Error] Status: ${res.status}`);
+      return [];
+    }
+
+    const payload = await res.json();
+    const articles = normalizeNewsResponse(payload);
+    console.log(`[TezKhabar] Received ${articles.length} articles from backend.`);
+    return articles;
+  } catch (error) {
+    console.error("[TezKhabar] Network fetch error:", error);
     return [];
   }
 }
 
+/**
+ * Fetch single article by slug
+ */
 export async function getArticleBySlug(slug: string): Promise<NewsArticle | null> {
   if (!slug) return null;
+
   try {
-    let res = await safeFetch(`${API_BASE}/api/news/${slug}`);
-    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/news/${slug}`);
-    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/api/articles/${slug}`);
-    if (!res || !res.ok) return null;
+    let res = await fetch(`${API_BASE}/api/news/${slug}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/api/articles/${slug}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+    }
+
+    if (!res.ok) return null;
 
     const data = await res.json();
-    return normalizeArticle(data.article || data.data || data);
-  } catch {
+    const rawArticle = data.article || data.data || data;
+    return normalizeArticle(rawArticle);
+  } catch (error) {
+    console.error(`[TezKhabar] Article fetch error for slug [${slug}]:`, error);
     return null;
   }
 }
 
-export async function getCategoryNews(category: string, limit = 20): Promise<NewsArticle[]> {
+/**
+ * Fetch category news
+ */
+export async function getCategoryNews(category: string, limit = 15): Promise<NewsArticle[]> {
   if (!category) return [];
-  try {
-    let res = await safeFetch(`${API_BASE}/api/news?category=${category.toLowerCase()}&limit=${limit}`);
-    if (!res || !res.ok) return [];
 
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data.articles || data.results || data.data || [];
-    return list.map(normalizeArticle);
+  try {
+    const res = await fetch(`${API_BASE}/api/news?category=${category.toLowerCase()}&limit=${limit}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+
+    const payload = await res.json();
+    return normalizeNewsResponse(payload);
   } catch {
     return [];
   }
 }
 
+/**
+ * Fetch trending news
+ */
 export async function getTrendingNews(limit = 10): Promise<NewsArticle[]> {
   try {
-    let res = await safeFetch(`${API_BASE}/api/trending?limit=${limit}`);
-    if (!res || !res.ok) return [];
+    const res = await fetch(`${API_BASE}/api/trending?limit=${limit}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
 
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data.articles || data.trending || data.results || [];
-    return list.map(normalizeArticle);
+    if (!res.ok) return [];
+
+    const payload = await res.json();
+    return normalizeNewsResponse(payload);
   } catch {
     return [];
   }
 }
 
+/**
+ * Search news
+ */
 export async function searchNews(query: string): Promise<NewsArticle[]> {
-  if (!query) return [];
-  try {
-    const res = await safeFetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
-    if (!res || !res.ok) return [];
+  if (!query || !query.trim()) return [];
 
-    const data = await res.json();
-    const list = Array.isArray(data) ? data : data.articles || data.results || [];
-    return list.map(normalizeArticle);
+  try {
+    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(query.trim())}`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return [];
+
+    const payload = await res.json();
+    return normalizeNewsResponse(payload);
   } catch {
     return [];
   }
 }
+
+export const fetchNews = getLatestNews;

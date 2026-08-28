@@ -53,9 +53,6 @@ export const FRONTEND_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar-frontend.onrender.com"
 ).replace(/\/+$/, "");
 
-/**
- * Strips HTML tags and decodes basic entities
- */
 export function stripHtml(raw: string = ""): string {
   if (!raw) return "";
   let text = raw.replace(/<[^>]*>?/gm, " ");
@@ -69,9 +66,6 @@ export function stripHtml(raw: string = ""): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/**
- * Filter out generic Google News / search placeholder logos
- */
 export function normalizeImageUrl(raw: any): string | null {
   const candidate =
     raw.image_url ||
@@ -86,7 +80,6 @@ export function normalizeImageUrl(raw: any): string | null {
   }
 
   const lower = candidate.toLowerCase();
-  // Filter out generic Google logos and tracking beacons
   const genericPatterns = [
     "lh3.googleusercontent.com",
     "gstatic.com",
@@ -95,6 +88,7 @@ export function normalizeImageUrl(raw: any): string | null {
     "default_news",
     "placeholder",
     "fallback",
+    "favicon",
   ];
 
   for (const pattern of genericPatterns) {
@@ -106,9 +100,6 @@ export function normalizeImageUrl(raw: any): string | null {
   return candidate;
 }
 
-/**
- * Formats timestamps with relative fallbacks ("5 min ago", "28 Aug 2026", "Recently")
- */
 export function formatNewsDate(value?: string | null): string {
   if (!value) return "Recently";
   const date = new Date(value);
@@ -136,58 +127,31 @@ export function formatNewsDate(value?: string | null): string {
   });
 }
 
-/**
- * Normalizes title by removing accidental trailing feed tags
- */
 export function normalizeTitle(rawTitle?: string): string {
-  if (!rawTitle) return "TezKhabar News Report";
+  if (!rawTitle) return "";
   let title = stripHtml(rawTitle);
   title = title.replace(/\s*-\s*Google News$/i, "").trim();
-  if (title.toLowerCase() === "google news") {
-    return "TezKhabar National News Update";
-  }
   return title;
 }
 
-/**
- * Centralized normalizer producing consistent, complete NewsArticle objects
- */
-export function normalizeArticle(raw: any): NewsArticle {
+export function normalizeArticle(raw: any): NewsArticle | null {
   if (!raw || typeof raw !== "object") {
-    return {
-      id: "news-story",
-      slug: "news-story",
-      title: "News Update",
-      summary: "",
-      description: "",
-      content: "",
-      category: "india",
-      image: null,
-      image_url: null,
-      source: "TezKhabar Wire",
-      source_name: "TezKhabar Wire",
-      sourceName: "TezKhabar Wire",
-      source_url: "#",
-      sourceUrl: "#",
-      published_at: new Date().toISOString(),
-      publishedAt: new Date().toISOString(),
-      canonical_url: `${FRONTEND_URL}/news/news-story`,
-      sources: [],
-      key_facts: [],
-      keyFacts: [],
-    };
+    return null;
   }
 
   const title = normalizeTitle(raw.title || raw.headline);
+  if (!title) return null;
+
   const fallbackSlug = (raw.id || raw._id || title)
     .toString()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
 
-  const slug = String(raw.slug || raw.url_slug || fallbackSlug).trim() || "news-story";
-  const validImage = normalizeImageUrl(raw);
+  const slug = String(raw.slug || raw.url_slug || fallbackSlug).trim();
+  if (!slug) return null;
 
+  const validImage = normalizeImageUrl(raw);
   const rawSummary = raw.dek || raw.summary || raw.description || "";
   const cleanSummary = stripHtml(rawSummary) || title;
   const rawContent = raw.content || raw.body || raw.article_text || `<p>${cleanSummary}</p>`;
@@ -271,7 +235,9 @@ export function normalizeNewsResponse(payload: unknown): NewsArticle[] {
     else if (Array.isArray(obj.data)) rawList = obj.data;
   }
 
-  return rawList.map(normalizeArticle).filter((art) => art.title && art.slug);
+  return rawList
+    .map(normalizeArticle)
+    .filter((art): art is NewsArticle => art !== null && Boolean(art.title && art.slug));
 }
 
 export async function fetchNews(limit = 15): Promise<NewsArticle[]> {
@@ -378,7 +344,6 @@ export async function searchNews(query: string): Promise<NewsArticle[]> {
   }
 }
 
-// Aliases
 export const getLatestNews = fetchNews;
 export const getArticleBySlug = fetchNewsBySlug;
 export const getCategoryNews = fetchCategoryNews;

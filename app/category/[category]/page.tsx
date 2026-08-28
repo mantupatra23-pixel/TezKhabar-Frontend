@@ -1,30 +1,19 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCategoryNews } from "@/lib/api";
 import NewsCard from "@/components/news/NewsCard";
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 interface CategoryPageProps {
   params: { category: string };
 }
 
-export function generateStaticParams() {
-  return [
-    { category: "india" },
-    { category: "politics" },
-    { category: "business" },
-    { category: "technology" },
-    { category: "ai" },
-    { category: "finance" },
-    { category: "sports" },
-    { category: "entertainment" },
-  ];
-}
-
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const cat = params.category.charAt(0).toUpperCase() + params.category.slice(1);
   return {
-    title: `${cat} News - Analysis & Live Updates`,
-    description: `Comprehensive editorial coverage and latest reporting on ${cat} from TezKhabar.`,
+    title: `${cat} News - Live Updates | TezKhabar`,
+    description: `Latest reporting and developments in ${cat}.`,
     alternates: {
       canonical: `/category/${params.category}`,
     },
@@ -32,7 +21,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const articles = await getCategoryNews(params.category);
+  const articles = await getCategoryNews(params.category, 20);
   const catTitle = params.category.charAt(0).toUpperCase() + params.category.slice(1);
 
   return (
@@ -42,13 +31,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           {catTitle} News
         </h1>
         <p className="text-xs text-brand-blue font-medium mt-1">
-          Latest developments, analysis, and breaking stories in {catTitle}.
+          Latest developments and breaking reports in {catTitle}.
         </p>
       </header>
 
       {articles.length === 0 ? (
-        <div className="py-16 text-center">
-          <p className="text-sm text-brand-blue">No recent stories published in this section.</p>
+        <div className="bg-white border border-brand-sage rounded p-12 text-center my-8">
+          <p className="font-serif text-lg font-bold text-brand-navy mb-1">No recent stories published in this section.</p>
+          <p className="text-xs text-brand-blue">Check back soon as new reports are ingested continuously.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

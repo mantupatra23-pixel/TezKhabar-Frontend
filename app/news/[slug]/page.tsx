@@ -1,21 +1,13 @@
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getArticleBySlug, getLatestNews, FRONTEND_URL } from "@/lib/api";
+import { getArticleBySlug, FRONTEND_URL } from "@/lib/api";
 import ArticleView from "@/components/news/ArticleView";
+
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 interface PageProps {
   params: { slug: string };
-}
-
-export async function generateStaticParams() {
-  try {
-    const articles = await getLatestNews(30);
-    if (articles && articles.length > 0) {
-      return articles.map((art) => ({ slug: art.slug }));
-    }
-  } catch (err) {
-    console.error("Static params fetch error:", err);
-  }
-  return [{ slug: "latest-news" }];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -46,6 +38,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ArticlePage({ params }: PageProps) {
-  const initialArticle = await getArticleBySlug(params.slug);
-  return <ArticleView slug={params.slug} initialArticle={initialArticle} />;
+  const article = await getArticleBySlug(params.slug);
+  if (!article) {
+    notFound();
+  }
+  return <ArticleView slug={params.slug} initialArticle={article} />;
 }

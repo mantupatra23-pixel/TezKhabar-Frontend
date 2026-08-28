@@ -1,9 +1,11 @@
 import { MetadataRoute } from "next";
-import { getLatestNews } from "@/lib/api";
+import { getLatestNews, FRONTEND_URL } from "@/lib/api";
+
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar-frontend.onrender.com";
-  const articles = await getLatestNews(50);
+  const baseUrl = FRONTEND_URL;
+  const articles = await getLatestNews(60);
 
   const categories = [
     "india",
@@ -24,10 +26,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const articleEntries: MetadataRoute.Sitemap = articles.map((art) => {
-    const rawDate = art.updated_at || art.published_at || art.updatedAt || art.publishedAt;
+    const rawDate = art.updated_at || art.published_at;
+    const dateObj = rawDate ? new Date(rawDate) : new Date();
     return {
       url: `${baseUrl}/news/${art.slug}`,
-      lastModified: rawDate ? new Date(rawDate) : new Date(),
+      lastModified: Number.isNaN(dateObj.getTime()) ? new Date() : dateObj,
       changeFrequency: "never",
       priority: 0.9,
     };

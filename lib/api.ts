@@ -25,9 +25,9 @@ export interface NewsArticle {
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://tezkhabar.onrender.com").replace(/\/+$/, "");
 
 /**
- * Safe fetch wrapper with timeout for Render free tier cold-starts
+ * Safe fetch with 30s timeout for Render backend cold-starts
  */
-async function safeFetch(url: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response | null> {
+async function safeFetch(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<Response | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -45,30 +45,25 @@ async function safeFetch(url: string, options: RequestInit = {}, timeoutMs = 800
     return response;
   } catch (error) {
     clearTimeout(timer);
-    console.error(`[Fetch Error] Failed for ${url}:`, error);
     return null;
   }
 }
 
-/**
- * Normalizes varied backend response shapes into strict NewsArticle schema.
- */
 export function normalizeArticle(raw: any): NewsArticle {
   if (!raw || typeof raw !== "object") {
     return {
       id: "unknown",
-      slug: "unknown-story",
-      title: "Untitled Story",
+      slug: "news-update",
+      title: "TezKhabar News Wire",
       description: "",
       content: "",
       category: "india",
-      source: "TezKhabar Wire",
+      source: "TezKhabar",
       publishedAt: new Date().toISOString(),
     };
   }
 
   const title = String(raw.title || raw.headline || "Untitled Story").trim();
-
   const fallbackSlug = (raw.id || raw._id || title)
     .toString()
     .toLowerCase()
@@ -76,14 +71,7 @@ export function normalizeArticle(raw: any): NewsArticle {
     .replace(/(^-|-$)+/g, "");
 
   const slug = String(raw.slug || raw.url_slug || fallbackSlug);
-
-  const image =
-    raw.image ||
-    raw.image_url ||
-    raw.imageUrl ||
-    raw.thumbnail ||
-    raw.cover_image ||
-    undefined;
+  const image = raw.image || raw.image_url || raw.imageUrl || raw.thumbnail || undefined;
 
   let sources: NewsSource[] = [];
   if (Array.isArray(raw.sources)) {
@@ -109,7 +97,7 @@ export function normalizeArticle(raw: any): NewsArticle {
     category: String(raw.category || "india").toLowerCase(),
     source: String(raw.source || raw.publisher || raw.source_name || "TezKhabar Wire"),
     sourceUrl: raw.source_url || raw.sourceUrl || raw.url || undefined,
-    publishedAt: raw.published_at || raw.publishedAt || raw.created_at || raw.createdAt || new Date().toISOString(),
+    publishedAt: raw.published_at || raw.publishedAt || raw.createdAt || new Date().toISOString(),
     updatedAt: raw.updated_at || raw.updatedAt || undefined,
     author: raw.author || raw.byline || undefined,
     keyFacts: keyFacts.length > 0 ? keyFacts : undefined,
@@ -118,130 +106,72 @@ export function normalizeArticle(raw: any): NewsArticle {
   };
 }
 
-/**
- * Fetch latest news articles
- */
 export async function getLatestNews(limit = 20): Promise<NewsArticle[]> {
   try {
-    let res = await safeFetch(`${API_BASE}/api/news?limit=${limit}`, { next: { revalidate: 120 } });
-    if (!res || !res.ok) {
-      res = await safeFetch(`${API_BASE}/news?limit=${limit}`, { next: { revalidate: 120 } });
-    }
-
+    let res = await safeFetch(`${API_BASE}/api/news?limit=${limit}`);
+    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/news?limit=${limit}`);
     if (!res || !res.ok) return [];
 
     const data = await res.json();
     const list = Array.isArray(data) ? data : data.articles || data.results || data.data || [];
     return list.map(normalizeArticle);
-  } catch (error) {
-    console.error("[getLatestNews Error]:", error);
+  } catch {
     return [];
   }
 }
 
-/**
- * Fetch a single article by slug
- */
 export async function getArticleBySlug(slug: string): Promise<NewsArticle | null> {
   if (!slug) return null;
-
   try {
-    let res = await safeFetch(`${API_BASE}/api/news/${slug}`, { next: { revalidate: 60 } });
-    if (!res || !res.ok) {
-      res = await safeFetch(`${API_BASE}/news/${slug}`, { next: { revalidate: 60 } });
-    }
-    if (!res || !res.ok) {
-      res = await safeFetch(`${API_BASE}/api/articles/${slug}`, { next: { revalidate: 60 } });
-    }
-
+    let res = await safeFetch(`${API_BASE}/api/news/${slug}`);
+    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/news/${slug}`);
+    if (!res || !res.ok) res = await safeFetch(`${API_BASE}/api/articles/${slug}`);
     if (!res || !res.ok) return null;
 
     const data = await res.json();
-    const raw = data.article || data.data || data;
-    return normalizeArticle(raw);
-  } catch (error) {
-    console.error(`[getArticleBySlug Error] Slug: ${slug}:`, error);
+    return normalizeArticle(data.article || data.data || data);
+  } catch {
     return null;
   }
 }
 
-/**
- * Fetch articles filtered by category
- */
 export async function getCategoryNews(category: string, limit = 20): Promise<NewsArticle[]> {
   if (!category) return [];
-
   try {
-    const cleanCat = category.toLowerCase();
-    let res = await safeFetch(`${API_BASE}/api/news?category=${cleanCat}&limit=${limit}`, {
-      next: { revalidate: 120 },
-    });
-    if (!res || !res.ok) {
-      res = await safeFetch(`${API_BASE}/api/category/${cleanCat}?limit=${limit}`, {
-        next: { revalidate: 120 },
-      });
-    }
-
+    let res = await safeFetch(`${API_BASE}/api/news?category=${category.toLowerCase()}&limit=${limit}`);
     if (!res || !res.ok) return [];
 
     const data = await res.json();
     const list = Array.isArray(data) ? data : data.articles || data.results || data.data || [];
     return list.map(normalizeArticle);
-  } catch (error) {
-    console.error(`[getCategoryNews Error] Category: ${category}:`, error);
+  } catch {
     return [];
   }
 }
 
-/**
- * Fetch trending news
- */
 export async function getTrendingNews(limit = 10): Promise<NewsArticle[]> {
   try {
-    let res = await safeFetch(`${API_BASE}/api/trending?limit=${limit}`, { next: { revalidate: 300 } });
-    if (!res || !res.ok) {
-      res = await safeFetch(`${API_BASE}/trending?limit=${limit}`, { next: { revalidate: 300 } });
-    }
-
+    let res = await safeFetch(`${API_BASE}/api/trending?limit=${limit}`);
     if (!res || !res.ok) return [];
 
     const data = await res.json();
     const list = Array.isArray(data) ? data : data.articles || data.trending || data.results || [];
     return list.map(normalizeArticle);
-  } catch (error) {
-    console.error("[getTrendingNews Error]:", error);
+  } catch {
     return [];
   }
 }
 
-/**
- * Search articles by query
- */
-export async function searchNews(query: string, category?: string): Promise<NewsArticle[]> {
-  if (!query || query.trim().length === 0) return [];
-
+export async function searchNews(query: string): Promise<NewsArticle[]> {
+  if (!query) return [];
   try {
-    const searchParams = new URLSearchParams({ q: query.trim() });
-    if (category) searchParams.append("category", category.toLowerCase());
-
-    const res = await safeFetch(`${API_BASE}/api/search?${searchParams.toString()}`, {
-      cache: "no-store",
-    });
-
+    const res = await safeFetch(`${API_BASE}/api/search?q=${encodeURIComponent(query)}`);
     if (!res || !res.ok) return [];
 
     const data = await res.json();
-    const list = Array.isArray(data) ? data : data.articles || data.results || data.data || [];
+    const list = Array.isArray(data) ? data : data.articles || data.results || [];
     return list.map(normalizeArticle);
-  } catch (error) {
-    console.error(`[searchNews Error] Query: "${query}":`, error);
+  } catch {
     return [];
   }
 }
-
-// Aliases for compatibility
-export const fetchLatestNews = getLatestNews;
-export const fetchArticleBySlug = getArticleBySlug;
-export const fetchCategoryNews = getCategoryNews;
-export const fetchTrendingNews = getTrendingNews;
-export const searchNewsApi = searchNews;

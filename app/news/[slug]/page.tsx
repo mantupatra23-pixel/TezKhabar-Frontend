@@ -1,7 +1,5 @@
-import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import type { Metadata } from "next";
 import { getArticleBySlug, getLatestNews } from "@/lib/api";
 import CategoryFallback from "@/components/news/CategoryFallback";
 import AskTezKhabar from "@/components/ai/AskTezKhabar";
@@ -12,94 +10,35 @@ interface PageProps {
 
 export async function generateStaticParams() {
   try {
-    const articles = await getLatestNews(50);
-    if (articles && articles.length > 0) {
+    const articles = await getLatestNews(5);
+    if (articles.length > 0) {
       return articles.map((art) => ({ slug: art.slug }));
     }
-  } catch (e) {
-    console.error("Static params fetch error:", e);
-  }
-  return [{ slug: "latest-updates" }];
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const article = await getArticleBySlug(params.slug);
-  if (!article) return { title: "Article Not Found | TezKhabar" };
-
-  return {
-    title: `${article.title} | TezKhabar`,
-    description: article.description || article.title,
-    alternates: {
-      canonical: `/news/${article.slug}`,
-    },
-    openGraph: {
-      title: article.title,
-      description: article.description || article.title,
-      url: `/news/${article.slug}`,
-      type: "article",
-      publishedTime: article.publishedAt,
-      modifiedTime: article.updatedAt || article.publishedAt,
-      images: article.image ? [{ url: article.image }] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: article.title,
-      description: article.description || article.title,
-      images: article.image ? [article.image] : [],
-    },
-  };
+  } catch {}
+  return [{ slug: "latest-news" }];
 }
 
 export default async function ArticlePage({ params }: PageProps) {
   const article = await getArticleBySlug(params.slug);
 
   if (!article) {
-    notFound();
+    return (
+      <div className="max-w-article mx-auto px-4 py-16 text-center">
+        <h1 className="font-serif text-2xl font-bold text-brand-navy mb-3">Loading Editorial Report</h1>
+        <p className="text-xs text-brand-blue mb-6">Fetching live dispatch from the news wire...</p>
+        <Link href="/" className="bg-brand-navy text-brand-cream px-4 py-2 rounded text-xs font-bold uppercase tracking-wider">
+          Return to Top Stories
+        </Link>
+      </div>
+    );
   }
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    headline: article.title,
-    description: article.description,
-    image: article.image ? [article.image] : [],
-    datePublished: article.publishedAt,
-    dateModified: article.updatedAt || article.publishedAt,
-    author: {
-      "@type": "Person",
-      name: article.author || article.source || "TezKhabar Editorial",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "TezKhabar",
-      logo: {
-        "@type": "ImageObject",
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar.com"}/logo.png`,
-      },
-    },
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar.com"}/news/${article.slug}`,
-    },
-  };
 
   return (
     <article className="max-w-article mx-auto px-4 sm:px-6 py-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
       <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-wider text-brand-blue mb-4">
         <ol className="flex items-center space-x-2">
-          <li>
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>
-          </li>
-          <li>
-            <span>/</span>
-          </li>
+          <li><Link href="/" className="hover:underline">Home</Link></li>
+          <li><span>/</span></li>
           <li>
             <Link href={`/category/${article.category}`} className="hover:underline capitalize">
               {article.category}
@@ -175,18 +114,10 @@ export default async function ArticlePage({ params }: PageProps) {
           </h3>
           <ul className="space-y-2">
             {article.sources.map((s, i) => (
-              <li
-                key={i}
-                className="text-xs flex items-center justify-between bg-brand-creamLight p-2.5 rounded border border-brand-sage/40"
-              >
+              <li key={i} className="text-xs flex items-center justify-between bg-brand-creamLight p-2.5 rounded border border-brand-sage/40">
                 <span className="font-semibold text-brand-navy">{s.name}</span>
                 {s.url && (
-                  <a
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand-blue hover:underline"
-                  >
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-brand-blue hover:underline">
                     View Original →
                   </a>
                 )}

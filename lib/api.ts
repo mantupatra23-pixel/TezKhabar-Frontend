@@ -11,17 +11,25 @@ export interface NewsArticle {
   title: string;
   dek?: string;
   summary?: string;
+  description?: string;
   content?: string;
   category: string;
   subcategory?: string;
   badge?: string;
+  image?: string | null;
   image_url?: string | null;
-  source_url?: string;
+  source?: string;
   source_name: string;
+  source_url?: string;
+  sourceUrl?: string;
   source_domain?: string;
   published_at: string;
+  publishedAt?: string;
   updated_at?: string;
+  updatedAt?: string;
   created_at?: string;
+  createdAt?: string;
+  author?: string;
   ai_generated?: boolean;
   content_status?: string;
   confidence?: string;
@@ -30,6 +38,7 @@ export interface NewsArticle {
   word_count?: number;
   sources?: NewsSource[];
   key_facts?: string[];
+  keyFacts?: string[];
 }
 
 export const API_BASE = (
@@ -47,8 +56,10 @@ export function normalizeArticle(raw: any): NewsArticle {
       slug: "news-story",
       title: "News Update",
       category: "india",
+      source: "TezKhabar Wire",
       source_name: "TezKhabar Wire",
       published_at: new Date().toISOString(),
+      publishedAt: new Date().toISOString(),
     };
   }
 
@@ -56,7 +67,7 @@ export function normalizeArticle(raw: any): NewsArticle {
   const rawSlug = raw.slug || raw._id || title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
   const slug = String(rawSlug).trim();
 
-  const image =
+  const img =
     raw.image_url ??
     raw.imageUrl ??
     raw.image ??
@@ -64,10 +75,12 @@ export function normalizeArticle(raw: any): NewsArticle {
     raw.cover_image ??
     null;
 
-  const validImage = typeof image === "string" && image.startsWith("http") ? image : null;
+  const validImage = typeof img === "string" && img.startsWith("http") ? img : null;
   const rawSummary = raw.dek || raw.summary || raw.description || "";
   const cleanSummary = stripHtml(rawSummary);
   const rawContent = raw.content || raw.body || raw.article_text || cleanSummary;
+  const sourceName = String(raw.source_name || raw.source || "TezKhabar Wire");
+  const pubDate = String(raw.published_at || raw.publishedAt || raw.created_at || raw.createdAt || new Date().toISOString());
 
   let sources: NewsSource[] = [];
   if (Array.isArray(raw.sources)) {
@@ -89,17 +102,25 @@ export function normalizeArticle(raw: any): NewsArticle {
     title: title,
     dek: String(raw.dek || "").trim(),
     summary: cleanSummary || title,
+    description: cleanSummary || title,
     content: rawContent,
     category: String(raw.category || "india").toLowerCase(),
     subcategory: raw.subcategory || "India",
     badge: raw.badge || undefined,
+    image: validImage,
     image_url: validImage,
+    source: sourceName,
+    source_name: sourceName,
     source_url: raw.source_url || raw.sourceUrl || raw.url || "#",
-    source_name: String(raw.source_name || raw.source || "TezKhabar Wire"),
+    sourceUrl: raw.source_url || raw.sourceUrl || raw.url || "#",
     source_domain: raw.source_domain || undefined,
-    published_at: String(raw.published_at || raw.publishedAt || raw.created_at || new Date().toISOString()),
-    updated_at: raw.updated_at || undefined,
-    created_at: raw.created_at || undefined,
+    published_at: pubDate,
+    publishedAt: pubDate,
+    updated_at: raw.updated_at || raw.updatedAt || undefined,
+    updatedAt: raw.updated_at || raw.updatedAt || undefined,
+    created_at: raw.created_at || raw.createdAt || undefined,
+    createdAt: raw.created_at || raw.createdAt || undefined,
+    author: raw.author || undefined,
     ai_generated: Boolean(raw.ai_generated),
     content_status: String(raw.content_status || "published"),
     confidence: String(raw.confidence || "developing"),
@@ -108,6 +129,7 @@ export function normalizeArticle(raw: any): NewsArticle {
     word_count: Number(raw.word_count || 0),
     sources: sources,
     key_facts: keyFacts,
+    keyFacts: keyFacts,
   };
 }
 
@@ -148,7 +170,7 @@ export async function getLatestNews(limit = 15): Promise<NewsArticle[]> {
 
     const payload = await res.json();
     return normalizeNewsResponse(payload);
-  } catch (error) {
+  } catch {
     return [];
   }
 }

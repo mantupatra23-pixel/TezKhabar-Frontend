@@ -10,7 +10,7 @@ interface PageProps {
 
 export async function generateStaticParams() {
   try {
-    const articles = await getLatestNews(5);
+    const articles = await getLatestNews(10);
     if (articles.length > 0) {
       return articles.map((art) => ({ slug: art.slug }));
     }
@@ -33,6 +33,11 @@ export default async function ArticlePage({ params }: PageProps) {
     );
   }
 
+  const imageUrl = article.image_url || article.image;
+  const summaryText = article.description || article.summary || article.dek;
+  const pubDate = article.published_at || article.publishedAt || new Date().toISOString();
+  const sourceName = article.source_name || article.source || "TezKhabar Wire";
+
   return (
     <article className="max-w-article mx-auto px-4 sm:px-6 py-8">
       <nav aria-label="Breadcrumb" className="text-xs uppercase tracking-wider text-brand-blue mb-4">
@@ -51,19 +56,19 @@ export default async function ArticlePage({ params }: PageProps) {
         {article.title}
       </h1>
 
-      {article.description && (
+      {summaryText && (
         <p className="text-base sm:text-lg text-brand-navy/80 font-serif italic mt-4 leading-relaxed">
-          {article.description}
+          {summaryText}
         </p>
       )}
 
       <div className="flex items-center justify-between text-xs text-brand-blue font-medium py-4 my-6 border-y border-brand-sage/60">
         <div>
           <span>Reported by </span>
-          <span className="font-bold text-brand-navy">{article.author || article.source}</span>
+          <span className="font-bold text-brand-navy">{article.author || sourceName}</span>
         </div>
-        <time dateTime={article.publishedAt}>
-          {new Date(article.publishedAt).toLocaleDateString("en-IN", {
+        <time dateTime={pubDate}>
+          {new Date(pubDate).toLocaleDateString("en-IN", {
             day: "numeric",
             month: "long",
             year: "numeric",
@@ -72,9 +77,9 @@ export default async function ArticlePage({ params }: PageProps) {
       </div>
 
       <div className="relative aspect-[16/9] w-full rounded overflow-hidden my-6 bg-brand-sage/20">
-        {article.image ? (
+        {imageUrl ? (
           <Image
-            src={article.image}
+            src={imageUrl}
             alt={article.title}
             fill
             sizes="(max-width: 768px) 100vw, 740px"
@@ -86,13 +91,13 @@ export default async function ArticlePage({ params }: PageProps) {
         )}
       </div>
 
-      {article.keyFacts && article.keyFacts.length > 0 && (
+      {article.key_facts && article.key_facts.length > 0 && (
         <div className="bg-brand-creamLight border-l-4 border-brand-peach p-5 rounded-r my-8">
           <h2 className="text-xs font-bold uppercase tracking-wider text-brand-navy mb-2">
             Quick Factual Summary
           </h2>
           <ul className="list-disc list-inside space-y-1.5 text-sm text-brand-navy/90 leading-relaxed">
-            {article.keyFacts.map((fact, index) => (
+            {article.key_facts.map((fact, index) => (
               <li key={index}>{fact}</li>
             ))}
           </ul>
@@ -103,7 +108,7 @@ export default async function ArticlePage({ params }: PageProps) {
         {article.content ? (
           <div dangerouslySetInnerHTML={{ __html: article.content }} />
         ) : (
-          <p>{article.description}</p>
+          <p>{summaryText}</p>
         )}
       </div>
 

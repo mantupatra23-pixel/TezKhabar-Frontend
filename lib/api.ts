@@ -6,6 +6,7 @@ export interface NewsSource {
 }
 
 export interface NewsArticle {
+  id?: string;
   slug: string;
   title: string;
   dek?: string;
@@ -35,19 +36,14 @@ export const API_BASE = (
   process.env.NEXT_PUBLIC_API_URL || "https://tezkhabar.onrender.com"
 ).replace(/\/+$/, "");
 
-/**
- * Utility to strip HTML tags safely for news card excerpts
- */
 export function stripHtml(html: string = ""): string {
   return html.replace(/<[^>]*>?/gm, "").trim();
 }
 
-/**
- * Normalizes any backend article document format into a predictable NewsArticle
- */
 export function normalizeArticle(raw: any): NewsArticle {
   if (!raw || typeof raw !== "object") {
     return {
+      id: "news-story",
       slug: "news-story",
       title: "News Update",
       category: "india",
@@ -69,10 +65,8 @@ export function normalizeArticle(raw: any): NewsArticle {
     null;
 
   const validImage = typeof image === "string" && image.startsWith("http") ? image : null;
-
   const rawSummary = raw.dek || raw.summary || raw.description || "";
   const cleanSummary = stripHtml(rawSummary);
-
   const rawContent = raw.content || raw.body || raw.article_text || cleanSummary;
 
   let sources: NewsSource[] = [];
@@ -90,6 +84,7 @@ export function normalizeArticle(raw: any): NewsArticle {
   else if (Array.isArray(raw.keyFacts)) keyFacts = raw.keyFacts;
 
   return {
+    id: String(raw.id || raw._id || slug),
     slug: slug,
     title: title,
     dek: String(raw.dek || "").trim(),
@@ -116,13 +111,6 @@ export function normalizeArticle(raw: any): NewsArticle {
   };
 }
 
-/**
- * Universal array extractor supporting:
- * 1. payload.items (Current production backend)
- * 2. payload.articles
- * 3. payload.news
- * 4. payload (direct array)
- */
 export function normalizeNewsResponse(payload: unknown): NewsArticle[] {
   if (!payload) return [];
 
@@ -148,9 +136,6 @@ export function normalizeNewsResponse(payload: unknown): NewsArticle[] {
   return rawList.map(normalizeArticle);
 }
 
-/**
- * Fetch latest news articles from production backend
- */
 export async function getLatestNews(limit = 15): Promise<NewsArticle[]> {
   try {
     const res = await fetch(`${API_BASE}/api/news?limit=${limit}`, {
@@ -159,24 +144,15 @@ export async function getLatestNews(limit = 15): Promise<NewsArticle[]> {
       cache: "no-store",
     });
 
-    if (!res.ok) {
-      console.error(`[TezKhabar API Error] Status: ${res.status}`);
-      return [];
-    }
+    if (!res.ok) return [];
 
     const payload = await res.json();
-    const articles = normalizeNewsResponse(payload);
-    console.log(`[TezKhabar] Received ${articles.length} articles from backend.`);
-    return articles;
+    return normalizeNewsResponse(payload);
   } catch (error) {
-    console.error("[TezKhabar] Network fetch error:", error);
     return [];
   }
 }
 
-/**
- * Fetch single article by slug
- */
 export async function getArticleBySlug(slug: string): Promise<NewsArticle | null> {
   if (!slug) return null;
 
@@ -200,15 +176,11 @@ export async function getArticleBySlug(slug: string): Promise<NewsArticle | null
     const data = await res.json();
     const rawArticle = data.article || data.data || data;
     return normalizeArticle(rawArticle);
-  } catch (error) {
-    console.error(`[TezKhabar] Article fetch error for slug [${slug}]:`, error);
+  } catch {
     return null;
   }
 }
 
-/**
- * Fetch category news
- */
 export async function getCategoryNews(category: string, limit = 15): Promise<NewsArticle[]> {
   if (!category) return [];
 
@@ -228,9 +200,6 @@ export async function getCategoryNews(category: string, limit = 15): Promise<New
   }
 }
 
-/**
- * Fetch trending news
- */
 export async function getTrendingNews(limit = 10): Promise<NewsArticle[]> {
   try {
     const res = await fetch(`${API_BASE}/api/trending?limit=${limit}`, {
@@ -248,9 +217,6 @@ export async function getTrendingNews(limit = 10): Promise<NewsArticle[]> {
   }
 }
 
-/**
- * Search news
- */
 export async function searchNews(query: string): Promise<NewsArticle[]> {
   if (!query || !query.trim()) return [];
 

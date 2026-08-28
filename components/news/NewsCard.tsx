@@ -1,21 +1,27 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { NewsArticle, stripHtml } from "@/lib/api";
+import { NewsArticle, formatNewsDate } from "@/lib/api";
 import CategoryFallback from "./CategoryFallback";
 
 export default function NewsCard({ article }: { article: NewsArticle }) {
-  const displaySummary = stripHtml(article.dek || article.summary || "");
+  const [imgError, setImgError] = useState(false);
+  const imageUrl = article.image_url || article.image;
+  const showImage = Boolean(imageUrl && !imgError);
 
   return (
     <article className="flex flex-col bg-white border border-brand-sage rounded overflow-hidden shadow-sm hover:shadow-md transition-all">
       <Link href={`/news/${article.slug}`} className="block relative aspect-[16/9] w-full bg-brand-sage/40">
-        {article.image_url ? (
+        {showImage ? (
           <Image
-            src={article.image_url}
+            src={imageUrl!}
             alt={article.title}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover"
+            onError={() => setImgError(true)}
           />
         ) : (
           <CategoryFallback category={article.category} className="h-full" />
@@ -41,20 +47,19 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
             </h3>
           </Link>
 
-          {displaySummary && (
+          {article.summary && (
             <p className="text-xs text-brand-navy/75 mt-2 line-clamp-2 leading-relaxed font-sans">
-              {displaySummary}
+              {article.summary}
             </p>
           )}
         </div>
 
         <div className="flex items-center justify-between text-[11px] text-brand-blue font-medium mt-4 pt-3 border-t border-brand-sage/40">
-          <span className="font-semibold text-brand-navy/80">{article.source_name}</span>
+          <span className="font-semibold text-brand-navy/80 truncate max-w-[140px]">
+            {article.source_name}
+          </span>
           <time dateTime={article.published_at}>
-            {new Date(article.published_at).toLocaleDateString("en-IN", {
-              month: "short",
-              day: "numeric",
-            })}
+            {formatNewsDate(article.published_at)}
           </time>
         </div>
       </div>

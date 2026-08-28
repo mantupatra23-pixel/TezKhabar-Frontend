@@ -1,22 +1,28 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { NewsArticle, stripHtml } from "@/lib/api";
+import { NewsArticle, formatNewsDate } from "@/lib/api";
 import CategoryFallback from "./CategoryFallback";
 
 export default function HeroStory({ article }: { article: NewsArticle }) {
-  const displaySummary = stripHtml(article.dek || article.summary || "");
+  const [imgError, setImgError] = useState(false);
+  const imageUrl = article.image_url || article.image;
+  const showImage = Boolean(imageUrl && !imgError);
 
   return (
     <article className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white border border-brand-sage rounded p-4 sm:p-6 shadow-sm mb-8">
       <div className="lg:col-span-7 relative aspect-[16/10] w-full rounded overflow-hidden bg-brand-sage/30">
-        {article.image_url ? (
+        {showImage ? (
           <Image
-            src={article.image_url}
+            src={imageUrl!}
             alt={article.title}
             fill
             sizes="(max-width: 1024px) 100vw, 60vw"
             className="object-cover"
             priority
+            onError={() => setImgError(true)}
           />
         ) : (
           <CategoryFallback category={article.category} className="h-full" />
@@ -39,15 +45,18 @@ export default function HeroStory({ article }: { article: NewsArticle }) {
             </h2>
           </Link>
 
-          {displaySummary && (
-            <p className="text-sm text-brand-navy/80 mt-3 leading-relaxed line-clamp-3">
-              {displaySummary}
+          {article.summary && (
+            <p className="text-sm text-brand-navy/80 mt-3 leading-relaxed line-clamp-3 font-sans">
+              {article.summary}
             </p>
           )}
         </div>
 
         <div className="mt-6 pt-4 border-t border-brand-sage/50 flex items-center justify-between">
-          <span className="text-xs font-bold text-brand-navy">{article.source_name}</span>
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-brand-navy">{article.source_name}</span>
+            <span className="text-[11px] text-brand-blue">{formatNewsDate(article.published_at)}</span>
+          </div>
           <Link
             href={`/news/${article.slug}`}
             className="bg-brand-blue text-white px-4 py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-brand-navy transition-colors"

@@ -1,10 +1,10 @@
 interface FallbackProps {
-  category: string;
+  category?: string;
   className?: string;
 }
 
-export default function CategoryFallback({ category, className = "h-48" }: FallbackProps) {
-  const cat = category.toLowerCase();
+export default function CategoryFallback({ category = "India", className = "h-48" }: FallbackProps) {
+  const cat = (category || "India").toLowerCase();
 
   const getStyle = () => {
     switch (cat) {
@@ -27,8 +27,10 @@ export default function CategoryFallback({ category, className = "h-48" }: Fallb
 
   return (
     <div className={`w-full flex flex-col items-center justify-center p-6 border ${getStyle()} ${className}`}>
-      <span className="text-xs uppercase tracking-widest font-bold opacity-80">TezKhabar Report</span>
-      <span className="font-serif text-xl sm:text-2xl font-bold mt-1 uppercase tracking-wider">{category}</span>
+      <span className="text-[10px] uppercase tracking-widest font-bold opacity-80">TezKhabar Wire</span>
+      <span className="font-serif text-lg sm:text-xl font-bold mt-1 uppercase tracking-wider text-center line-clamp-1">
+        {category}
+      </span>
     </div>
   );
 }

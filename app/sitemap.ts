@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { getLatestNews } from "@/lib/api";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tezkhabar-frontend.onrender.com";
   const articles = await getLatestNews(50);
 
   const categories = [
@@ -23,12 +23,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  const articleEntries: MetadataRoute.Sitemap = articles.map((art) => ({
-    url: `${baseUrl}/news/${art.slug}`,
-    lastModified: new Date(art.updatedAt || art.publishedAt),
-    changeFrequency: "never",
-    priority: 0.9,
-  }));
+  const articleEntries: MetadataRoute.Sitemap = articles.map((art) => {
+    const rawDate = art.updated_at || art.published_at || art.updatedAt || art.publishedAt;
+    return {
+      url: `${baseUrl}/news/${art.slug}`,
+      lastModified: rawDate ? new Date(rawDate) : new Date(),
+      changeFrequency: "never",
+      priority: 0.9,
+    };
+  });
 
   return [
     {

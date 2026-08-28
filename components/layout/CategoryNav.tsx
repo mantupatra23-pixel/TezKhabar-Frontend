@@ -18,14 +18,14 @@ export default function CategoryNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center overflow-x-auto no-scrollbar py-2 text-sm font-medium border-t border-brand-sage/30">
+    <nav className="flex items-center overflow-x-auto no-scrollbar py-2 text-xs font-semibold">
       <div className="flex space-x-2 shrink-0">
         <Link
           href="/"
-          className={`px-3 py-1 rounded text-xs uppercase tracking-wider transition-colors ${
+          className={`px-3 py-1 rounded transition-colors uppercase tracking-wider ${
             pathname === "/"
-              ? "bg-brand-navy text-brand-cream font-bold"
-              : "text-brand-navy hover:bg-brand-sage/50"
+              ? "bg-brand-navy text-brand-cream"
+              : "text-brand-navy hover:bg-brand-navy/10"
           }`}
         >
           Top Stories
@@ -36,10 +36,10 @@ export default function CategoryNav() {
             <Link
               key={cat.slug}
               href={`/category/${cat.slug}`}
-              className={`px-3 py-1 rounded text-xs uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1 rounded transition-colors uppercase tracking-wider ${
                 isActive
-                  ? "bg-brand-navy text-brand-cream font-bold"
-                  : "text-brand-navy hover:bg-brand-sage/50"
+                  ? "bg-brand-navy text-brand-cream"
+                  : "text-brand-navy hover:bg-brand-navy/10"
               }`}
             >
               {cat.label}

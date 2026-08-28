@@ -3,33 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #FDE5D6;
-  --bg-surface: #FFF7F2;
-  --text-main: #152935;
-  --text-muted: #698EA2;
-  --border-subtle: #CCD5D2;
-  --accent-peach: #E4A576;
+  --brand-navy: #152935;
+  --brand-blue: #698EA2;
+  --brand-peach: #E4A576;
+  --brand-sage: #CCD5D2;
+  --brand-cream: #FDE5D6;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-main);
+  background-color: var(--brand-cream);
+  color: var(--brand-navy);
   font-family: var(--font-inter), system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
 }
 
-/* Editorial line rules and focus */
-a:focus-visible, button:focus-visible {
-  outline: 2px solid #152935;
-  outline-offset: 2px;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

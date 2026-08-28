@@ -1,9 +1,10 @@
 import { MetadataRoute } from "next";
-import { getLatestNews, FRONTEND_URL } from "@/lib/api";
+import { getLatestNews, FRONTEND_URL, NewsArticle } from "@/lib/api";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = FRONTEND_URL;
-  let articles = [];
+  let articles: NewsArticle[] = [];
+
   try {
     articles = await getLatestNews(50);
   } catch (e) {
@@ -28,7 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  const articleEntries: MetadataRoute.Sitemap = (articles || []).map((art) => {
+  const articleEntries: MetadataRoute.Sitemap = articles.map((art) => {
     const rawDate = art.updated_at || art.published_at;
     const dateObj = rawDate ? new Date(rawDate) : new Date();
     return {
